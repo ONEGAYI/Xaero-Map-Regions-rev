@@ -13,6 +13,7 @@
 - 服务端作为区域数据权威来源，客户端只缓存和渲染同步数据。
 - 区域编辑权限默认限制为 OP 且处于创造模式的玩家。
 - 实现功能或修复问题前优先补充契约测试，能用纯 Java 单元测试覆盖的逻辑不要依赖游戏运行环境。
+- 本地烟测使用 `./gradlew clean test build` 和 `./gradlew runClient`；运行期 Xaero World Map jar 放在 `run/mods/`，该目录不进入 Git。
 
 ## 文档与提交
 
