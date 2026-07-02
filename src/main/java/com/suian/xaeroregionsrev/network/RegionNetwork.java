@@ -1,9 +1,12 @@
 package com.suian.xaeroregionsrev.network;
 
 import com.suian.xaeroregionsrev.XaeroRegionsRev;
+import com.suian.xaeroregionsrev.client.ClientRegionCache;
 import com.suian.xaeroregionsrev.network.payload.RegionSyncPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.PacketDistributor;
@@ -33,7 +36,10 @@ public final class RegionNetwork {
         CHANNEL.messageBuilder(RegionSyncPacket.class, packetId++, NetworkDirection.PLAY_TO_CLIENT)
                 .encoder(RegionSyncPacket::encode)
                 .decoder(RegionSyncPacket::decode)
-                .consumerMainThread((packet, contextSupplier) -> contextSupplier.get().setPacketHandled(true))
+                .consumerMainThread((packet, contextSupplier) -> {
+                    DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ClientRegionCache.replaceAll(packet.regions()));
+                    contextSupplier.get().setPacketHandled(true);
+                })
                 .add();
     }
 
