@@ -30,12 +30,33 @@
 │   项目通用规则、技术约定与文件树说明。
 ├── CLAUDE.md
 │   Claude 专属入口文件，通过 @AGENTS.md 引入通用规则。
-└── docs/
-    └── superpowers/
-        ├── plans/
-        │   └── 2026-07-02-xaero-map-regions-mvp-implementation.md
-        │       Forge 47.3.33 区域标注 MVP 实现计划。
-        └── specs/
-            └── 2026-07-02-xaero-map-regions-mvp-design.md
-                Forge 1.20.1 版 Xaero 区域标注 MVP 设计文档。
+├── build.gradle
+│   ForgeGradle 构建脚本、运行配置、Xaero 本地运行期依赖与测试依赖声明。
+├── docs/
+│   └── superpowers/
+│       ├── plans/
+│       │   └── 2026-07-02-xaero-map-regions-mvp-implementation.md
+│       │       Forge 47.3.33 区域标注 MVP 实现计划。
+│       └── specs/
+│           └── 2026-07-02-xaero-map-regions-mvp-design.md
+│               Forge 1.20.1 版 Xaero 区域标注 MVP 设计文档。
+├── src/main/java/com/suian/xaeroregionsrev/
+│   ├── client/
+│   │   客户端区域缓存与 Xaero World Map 覆盖层渲染适配。
+│   ├── command/
+│   │   `/region` 服务端命令入口与权限校验。
+│   ├── data/
+│   │   区域 SavedData 持久化。
+│   ├── network/
+│   │   服务端到客户端的区域同步网络包与发送入口。
+│   ├── platform/
+│   │   Forge 权限适配。
+│   ├── region/
+│   │   区域、点位、颜色、几何与 NBT 编解码模型。
+│   └── service/
+│       区域读写服务层。
+├── src/main/resources/
+│   Forge 模组元数据与资源包描述。
+└── src/test/java/com/suian/xaeroregionsrev/
+    纯 Java 契约测试，覆盖区域模型、编解码、网络包和 Xaero 屏幕识别。
 ```

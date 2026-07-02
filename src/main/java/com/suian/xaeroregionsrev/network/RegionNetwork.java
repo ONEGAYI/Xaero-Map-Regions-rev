@@ -1,5 +1,6 @@
 package com.suian.xaeroregionsrev.network;
 
+import com.mojang.logging.LogUtils;
 import com.suian.xaeroregionsrev.XaeroRegionsRev;
 import com.suian.xaeroregionsrev.client.ClientRegionCache;
 import com.suian.xaeroregionsrev.network.payload.RegionSyncPacket;
@@ -11,8 +12,10 @@ import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
+import org.slf4j.Logger;
 
 public final class RegionNetwork {
+    private static final Logger LOGGER = LogUtils.getLogger();
     private static final String PROTOCOL_VERSION = "1";
     public static final SimpleChannel CHANNEL = NetworkRegistry.ChannelBuilder
             .named(new ResourceLocation(XaeroRegionsRev.MOD_ID, "main"))
@@ -44,10 +47,12 @@ public final class RegionNetwork {
     }
 
     public static void sendToPlayer(ServerPlayer player, RegionSyncPacket packet) {
+        LOGGER.info("Sending {} region(s) to player {}.", packet.regions().size(), player.getGameProfile().getName());
         CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), packet);
     }
 
     public static void sendToAll(RegionSyncPacket packet) {
+        LOGGER.info("Broadcasting {} region(s) to all players.", packet.regions().size());
         CHANNEL.send(PacketDistributor.ALL.noArg(), packet);
     }
 }
