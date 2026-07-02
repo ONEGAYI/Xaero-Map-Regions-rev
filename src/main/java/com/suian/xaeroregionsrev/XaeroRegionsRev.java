@@ -1,6 +1,7 @@
 package com.suian.xaeroregionsrev;
 
 import com.mojang.logging.LogUtils;
+import com.suian.xaeroregionsrev.network.RegionNetwork;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
 import org.slf4j.Logger;
@@ -11,6 +12,7 @@ public final class XaeroRegionsRev {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public XaeroRegionsRev() {
+        RegionNetwork.register();
         MinecraftForge.EVENT_BUS.register(this);
         LOGGER.info("Xaero Map Regions Rev loaded.");
     }
