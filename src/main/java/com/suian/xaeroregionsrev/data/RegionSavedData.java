@@ -1,5 +1,6 @@
 package com.suian.xaeroregionsrev.data;
 
+import com.suian.xaeroregionsrev.XaeroRegionsRev;
 import com.suian.xaeroregionsrev.region.Region;
 import com.suian.xaeroregionsrev.region.RegionId;
 import com.suian.xaeroregionsrev.region.RegionNbtCodec;
@@ -10,6 +11,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -25,8 +27,12 @@ public final class RegionSavedData extends SavedData {
         RegionSavedData data = new RegionSavedData();
         ListTag list = tag.getList("regions", 10);
         for (int i = 0; i < list.size(); i++) {
-            Region region = RegionNbtCodec.readRegion(list.getCompound(i));
-            data.regions.put(region.id(), region);
+            try {
+                Region region = RegionNbtCodec.readRegion(list.getCompound(i));
+                data.regions.put(region.id(), region);
+            } catch (RuntimeException exception) {
+                XaeroRegionsRev.LOGGER.warn("Skipping invalid saved region at index {}", i, exception);
+            }
         }
         return data;
     }
@@ -42,7 +48,7 @@ public final class RegionSavedData extends SavedData {
     }
 
     public Collection<Region> allRegions() {
-        return regions.values();
+        return List.copyOf(regions.values());
     }
 
     public Optional<Region> find(RegionId id) {
