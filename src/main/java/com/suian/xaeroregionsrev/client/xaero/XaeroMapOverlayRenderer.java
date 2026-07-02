@@ -1,13 +1,16 @@
 package com.suian.xaeroregionsrev.client.xaero;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.suian.xaeroregionsrev.client.ClientRegionCache;
 import com.suian.xaeroregionsrev.region.Region;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.common.MinecraftForge;
 import org.joml.Matrix4f;
@@ -30,12 +33,17 @@ public final class XaeroMapOverlayRenderer {
         if (!XaeroScreenDetector.isWorldMapScreen(screen)) {
             return;
         }
-        renderRegions(event.getGuiGraphics(), screen, ClientRegionCache.regions());
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null || minecraft.player == null) {
+            return;
+        }
+        String currentDimension = minecraft.level.dimension().location().toString();
+        renderRegions(event.getGuiGraphics(), screen, ClientRegionCache.regions(), currentDimension);
     }
 
-    private static void renderRegions(GuiGraphics graphics, Screen screen, List<Region> regions) {
+    private static void renderRegions(GuiGraphics graphics, Screen screen, List<Region> regions, String currentDimension) {
         for (Region region : regions) {
-            if (region.points().size() < 3) {
+            if (region.points().size() < 3 || !region.dimension().equals(currentDimension)) {
                 continue;
             }
             drawPolygon(graphics, screen, region);
@@ -53,11 +61,20 @@ public final class XaeroMapOverlayRenderer {
         float green = ((color >>> 8) & 0xFF) / 255.0F;
         float blue = (color & 0xFF) / 255.0F;
 
-        buffer.begin(VertexFormat.Mode.TRIANGLE_FAN, DefaultVertexFormat.POSITION_COLOR);
-        for (var point : region.points()) {
-            Vector2f projected = PROJECTION.project(screen, point);
-            buffer.vertex(matrix, projected.x(), projected.y(), 0.0F).color(red, green, blue, alpha).endVertex();
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.disableDepthTest();
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+        try {
+            buffer.begin(VertexFormat.Mode.TRIANGLE_FAN, DefaultVertexFormat.POSITION_COLOR);
+            for (var point : region.points()) {
+                Vector2f projected = PROJECTION.project(screen, point);
+                buffer.vertex(matrix, projected.x(), projected.y(), 0.0F).color(red, green, blue, alpha).endVertex();
+            }
+            tesselator.end();
+        } finally {
+            RenderSystem.enableDepthTest();
+            RenderSystem.disableBlend();
         }
-        tesselator.end();
     }
 }
