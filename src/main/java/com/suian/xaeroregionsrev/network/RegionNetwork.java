@@ -3,6 +3,7 @@ package com.suian.xaeroregionsrev.network;
 import com.suian.xaeroregionsrev.XaeroRegionsRev;
 import com.suian.xaeroregionsrev.network.payload.RegionSyncPacket;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
 
@@ -16,17 +17,21 @@ public final class RegionNetwork {
             .simpleChannel();
 
     private static int packetId;
+    private static boolean registered;
 
     private RegionNetwork() {
     }
 
     public static void register() {
-        CHANNEL.registerMessage(
-                packetId++,
-                RegionSyncPacket.class,
-                RegionSyncPacket::encode,
-                RegionSyncPacket::decode,
-                (packet, contextSupplier) -> contextSupplier.get().setPacketHandled(true)
-        );
+        if (registered) {
+            return;
+        }
+        registered = true;
+
+        CHANNEL.messageBuilder(RegionSyncPacket.class, packetId++, NetworkDirection.PLAY_TO_CLIENT)
+                .encoder(RegionSyncPacket::encode)
+                .decoder(RegionSyncPacket::decode)
+                .consumerMainThread((packet, contextSupplier) -> contextSupplier.get().setPacketHandled(true))
+                .add();
     }
 }
