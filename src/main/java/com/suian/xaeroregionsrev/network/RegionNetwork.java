@@ -3,8 +3,10 @@ package com.suian.xaeroregionsrev.network;
 import com.suian.xaeroregionsrev.XaeroRegionsRev;
 import com.suian.xaeroregionsrev.network.payload.RegionSyncPacket;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkRegistry;
+import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
 
 public final class RegionNetwork {
@@ -33,5 +35,13 @@ public final class RegionNetwork {
                 .decoder(RegionSyncPacket::decode)
                 .consumerMainThread((packet, contextSupplier) -> contextSupplier.get().setPacketHandled(true))
                 .add();
+    }
+
+    public static void sendToPlayer(ServerPlayer player, RegionSyncPacket packet) {
+        CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), packet);
+    }
+
+    public static void sendToAll(RegionSyncPacket packet) {
+        CHANNEL.send(PacketDistributor.ALL.noArg(), packet);
     }
 }
