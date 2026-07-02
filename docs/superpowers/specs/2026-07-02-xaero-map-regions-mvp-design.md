@@ -4,13 +4,13 @@
 
 目标项目 Xaero Map Regions 在 Modrinth 和 CurseForge 上发布为 MIT License，但公开项目元数据没有源码地址。检索结果显示 Modrinth API 的 `source_url`、`issues_url`、`wiki_url` 均为空，GitHub 仓库与代码搜索也没有找到同名公开源码。因此本项目按干净实现处理，不复制或反编译目标 jar。
 
-本设计面向 Minecraft 1.20.1 Forge，实现一个与原模组核心体验相近的 MVP：服务端保存区域数据、同步给客户端，并在 Xaero's World Map 界面绘制区域边界和半透明填充。
+本设计面向 Minecraft 1.20.1 + Forge 47.3.33，实现一个与原模组核心体验相近的 MVP：服务端保存区域数据、同步给客户端，并在 Xaero's World Map 界面绘制区域边界和半透明填充。实现时需要把 Forge 版本号集中在构建属性中，并把 Forge/Xaero 接入代码隔离到适配层，便于同一 Minecraft 版本内向上兼容。
 
 ## 范围
 
 ### MVP 包含
 
-- Forge 1.20.1 Java 模组脚手架。
+- Forge 1.20.1-47.3.33 Java 模组脚手架。
 - 区域数据模型：区域 id、名称、维度、点列表、ARGB 颜色、分类、图标名、创建时间和更新时间。
 - 服务端 `SavedData` 持久化区域。
 - 服务端权限检查：只有 OP 且创造模式玩家可以创建、编辑、删除区域或上传图标。
@@ -20,6 +20,7 @@
 - 基础命令：
   - `/region hide <player> <region>`
   - `/region visible <player> <region>`
+  - `/region createpoly <name> <argb> <points>`：MVP 调试/管理命令，用于在图形化绘制流程完成前创建多边形区域。
   - `/region createpoint <player> <mode> <iconname> <label> <x> <y> <z>`：作为目标功能兼容项，首轮可先实现服务端数据与同步，不要求完整地图图标渲染。
   - `/region delpoint <player> <x> <y> <z>`：同上，首轮以数据闭环为主。
 - 单元测试覆盖序列化、权限判断、点在多边形内判断、区域隐藏规则等纯逻辑。
@@ -38,7 +39,7 @@
 
 ## 推荐方案
 
-采用 Forge 1.20.1 + Java，弱耦合接入 Xaero's World Map。
+采用 Forge 1.20.1-47.3.33 + Java，弱耦合接入 Xaero's World Map。
 
 项目不将 Xaero's World Map 或 XaeroLib 打包进 jar，只在开发环境和运行环境声明外部依赖。服务端数据、权限、同步协议和核心几何逻辑由本项目独立维护。客户端渲染层尽量通过 Forge 客户端事件、Mixin 或反射接入 Xaero 地图屏幕，接入点集中封装，减少未来 Xaero 版本变化时的修改范围。
 

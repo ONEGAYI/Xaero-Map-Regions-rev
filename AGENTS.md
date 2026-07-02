@@ -6,7 +6,8 @@
 
 ## 技术约定
 
-- 目标版本：Minecraft 1.20.1 + Forge。
+- 目标版本：Minecraft 1.20.1 + Forge 47.3.33。
+- 向上兼容：Forge 版本号集中放在构建属性中；Forge 与 Xaero 接入细节集中在适配层，业务逻辑不直接散落依赖版本细节。
 - 主要语言：Java。
 - Xaero's World Map 作为外部依赖使用，不打包进本项目产物。
 - 服务端作为区域数据权威来源，客户端只缓存和渲染同步数据。
@@ -30,6 +31,9 @@
 │   Claude 专属入口文件，通过 @AGENTS.md 引入通用规则。
 └── docs/
     └── superpowers/
+        ├── plans/
+        │   └── 2026-07-02-xaero-map-regions-mvp-implementation.md
+        │       Forge 47.3.33 区域标注 MVP 实现计划。
         └── specs/
             └── 2026-07-02-xaero-map-regions-mvp-design.md
                 Forge 1.20.1 版 Xaero 区域标注 MVP 设计文档。
