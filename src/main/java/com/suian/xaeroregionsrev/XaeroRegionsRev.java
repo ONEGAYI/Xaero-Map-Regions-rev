@@ -13,7 +13,9 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.api.distmarker.Dist;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
@@ -28,6 +30,10 @@ public final class XaeroRegionsRev {
     public XaeroRegionsRev() {
         RegionNetwork.register();
         MinecraftForge.EVENT_BUS.register(this);
+        DistExecutor.unsafeRunWhenOn(
+                Dist.CLIENT,
+                () -> com.suian.xaeroregionsrev.client.xaero.XaeroMapOverlayRenderer::register
+        );
         LOGGER.info("Xaero Map Regions Rev loaded.");
     }
 
