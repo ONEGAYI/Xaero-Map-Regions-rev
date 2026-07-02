@@ -5,12 +5,21 @@ import net.minecraft.nbt.ListTag;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public final class RegionNbtCodec {
+    private static final int TAG_INT = 3;
+    private static final int TAG_LONG = 4;
+    private static final int TAG_STRING = 8;
+    private static final int TAG_LIST = 9;
+    private static final int TAG_COMPOUND = 10;
+
     private RegionNbtCodec() {
     }
 
     public static CompoundTag writeRegion(Region region) {
+        Objects.requireNonNull(region, "Region cannot be null.");
+
         CompoundTag tag = new CompoundTag();
         tag.putString("id", region.id().value());
         tag.putString("name", region.name());
@@ -33,11 +42,27 @@ public final class RegionNbtCodec {
     }
 
     public static Region readRegion(CompoundTag tag) {
+        Objects.requireNonNull(tag, "Region tag cannot be null.");
+        requireField(tag, "id", TAG_STRING);
+        requireField(tag, "name", TAG_STRING);
+        requireField(tag, "dimension", TAG_STRING);
+        requireField(tag, "color", TAG_INT);
+        requireField(tag, "category", TAG_STRING);
+        requireField(tag, "iconName", TAG_STRING);
+        requireField(tag, "createdAt", TAG_LONG);
+        requireField(tag, "updatedAt", TAG_LONG);
+        requireField(tag, "points", TAG_LIST);
+
         List<RegionPoint> points = new ArrayList<>();
-        ListTag pointTags = tag.getList("points", 10);
+        ListTag pointTags = tag.getList("points", TAG_COMPOUND);
         for (int i = 0; i < pointTags.size(); i++) {
             CompoundTag pointTag = pointTags.getCompound(i);
+            requireField(pointTag, "x", TAG_INT);
+            requireField(pointTag, "z", TAG_INT);
             points.add(new RegionPoint(pointTag.getInt("x"), pointTag.getInt("z")));
+        }
+        if (!PolygonMath.isValidPolygon(points)) {
+            throw new IllegalArgumentException("Region points must form a valid polygon.");
         }
 
         return new Region(
@@ -51,5 +76,11 @@ public final class RegionNbtCodec {
                 tag.getLong("createdAt"),
                 tag.getLong("updatedAt")
         );
+    }
+
+    private static void requireField(CompoundTag tag, String key, int type) {
+        if (!tag.contains(key, type)) {
+            throw new IllegalArgumentException("Missing or invalid region NBT field: " + key);
+        }
     }
 }
