@@ -1,6 +1,8 @@
 package com.suian.xaeroregionsrev.command;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.suian.xaeroregionsrev.network.RegionNetwork;
 import com.suian.xaeroregionsrev.network.payload.RegionSyncPacket;
 import com.suian.xaeroregionsrev.platform.ForgePermissionAdapter;
@@ -12,6 +14,7 @@ import com.suian.xaeroregionsrev.region.RegionPoint;
 import com.suian.xaeroregionsrev.service.RegionService;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.event.RegisterCommandsEvent;
@@ -45,10 +48,12 @@ public final class RegionCommands {
                                                         StringArgumentType.getString(context, "points")
                                                 ))))))
                 .then(literal("hide")
+                        .requires(RegionCommands::canManage)
                         .then(argument("player", StringArgumentType.word())
                                 .then(argument("region", StringArgumentType.word())
                                         .executes(context -> messageOnly(context.getSource(), "hide command accepted for MVP data flow")))))
                 .then(literal("visible")
+                        .requires(RegionCommands::canManage)
                         .then(argument("player", StringArgumentType.word())
                                 .then(argument("region", StringArgumentType.word())
                                         .executes(context -> messageOnly(context.getSource(), "visible command accepted for MVP data flow")))))
@@ -83,22 +88,31 @@ public final class RegionCommands {
         }
     }
 
-    private static int createPolygon(CommandSourceStack source, String name, String argb, String pointsText) {
+    private static int createPolygon(CommandSourceStack source, String name, String argb, String pointsText) throws CommandSyntaxException {
+        MinecraftServer server = source.getServer();
+        if (server == null) {
+            throw commandError("Cannot create region without a running server.");
+        }
         ServerLevel level = source.getLevel();
         long now = Instant.now().toEpochMilli();
-        Region region = new Region(
-                new RegionId(name),
-                name,
-                level.dimension().location().toString(),
-                new ArgbColor((int) Long.parseLong(argb.replace("0x", ""), 16)),
-                "default",
-                "default",
-                parsePoints(pointsText),
-                now,
-                now
-        );
-        SERVICE.upsert(level, region);
-        RegionNetwork.sendToAll(new RegionSyncPacket(List.copyOf(SERVICE.list(level))));
+        Region region;
+        try {
+            region = new Region(
+                    new RegionId(name),
+                    name,
+                    level.dimension().location().toString(),
+                    parseArgb(argb),
+                    "default",
+                    "default",
+                    parsePoints(pointsText),
+                    now,
+                    now
+            );
+            SERVICE.upsert(level, region);
+        } catch (IllegalArgumentException exception) {
+            throw commandError(exception.getMessage());
+        }
+        RegionNetwork.sendToAll(new RegionSyncPacket(allRegions(server)));
         source.sendSuccess(() -> Component.literal("Created region " + region.id().value()), true);
         return 1;
     }
@@ -108,36 +122,97 @@ public final class RegionCommands {
         return 1;
     }
 
-    private static int createPoint(CommandSourceStack source, String playerName, String mode, String iconName, String label, String positionText) {
+    private static int createPoint(CommandSourceStack source, String playerName, String mode, String iconName, String label, String positionText) throws CommandSyntaxException {
         int[] position = parseBlockPosition(positionText);
-        UUID targetId = UUID.nameUUIDFromBytes(playerName.getBytes(StandardCharsets.UTF_8));
-        PointMarker marker = new PointMarker(targetId, mode, iconName, label, position[0], position[1], position[2]);
+        PointMarker marker;
+        try {
+            UUID targetId = UUID.nameUUIDFromBytes(playerName.getBytes(StandardCharsets.UTF_8));
+            marker = new PointMarker(targetId, mode, iconName, label, position[0], position[1], position[2]);
+        } catch (IllegalArgumentException exception) {
+            throw commandError(exception.getMessage());
+        }
         source.sendSuccess(() -> Component.literal("Created point marker " + marker.label() + " for " + playerName), true);
         return 1;
     }
 
-    private static List<RegionPoint> parsePoints(String text) {
-        String[] pairs = text.split(";");
+    private static ArgbColor parseArgb(String text) throws CommandSyntaxException {
+        String valueText = text.trim();
+        if (valueText.startsWith("0x") || valueText.startsWith("0X")) {
+            valueText = valueText.substring(2);
+        } else if (valueText.startsWith("#")) {
+            valueText = valueText.substring(1);
+        }
+        if (valueText.isEmpty() || valueText.length() > 8) {
+            throw commandError("Color must contain 1 to 8 hexadecimal digits.");
+        }
+        for (int i = 0; i < valueText.length(); i++) {
+            if (Character.digit(valueText.charAt(i), 16) < 0) {
+                throw commandError("Color must contain only hexadecimal digits.");
+            }
+        }
+        long value = Long.parseUnsignedLong(valueText, 16);
+        if (value < 0L || value > 0xFFFFFFFFL) {
+            throw commandError("Color must be between 0x00000000 and 0xFFFFFFFF.");
+        }
+        return new ArgbColor((int) value);
+    }
+
+    private static List<RegionPoint> parsePoints(String text) throws CommandSyntaxException {
+        String[] pairs = text.split(";", -1);
         List<RegionPoint> points = new ArrayList<>(pairs.length);
         for (String pair : pairs) {
-            String[] parts = pair.trim().split(",");
-            if (parts.length != 2) {
-                throw new IllegalArgumentException("Point must be formatted as x,z.");
+            String trimmedPair = pair.trim();
+            if (trimmedPair.isEmpty()) {
+                throw commandError("Region points cannot contain empty entries.");
             }
-            points.add(new RegionPoint(Integer.parseInt(parts[0].trim()), Integer.parseInt(parts[1].trim())));
+            String[] parts = trimmedPair.split(",", -1);
+            if (parts.length != 2) {
+                throw commandError("Point must be formatted as x,z.");
+            }
+            if (parts[0].trim().isEmpty() || parts[1].trim().isEmpty()) {
+                throw commandError("Point coordinates cannot be blank.");
+            }
+            try {
+                points.add(new RegionPoint(Integer.parseInt(parts[0].trim()), Integer.parseInt(parts[1].trim())));
+            } catch (NumberFormatException exception) {
+                throw commandError("Point coordinates must be valid integers.");
+            }
+        }
+        if (points.size() < 3) {
+            throw commandError("Region polygon must contain at least three points.");
         }
         return points;
     }
 
-    private static int[] parseBlockPosition(String text) {
-        String[] parts = text.trim().split(" ");
-        if (parts.length != 3) {
-            throw new IllegalArgumentException("Position must be formatted as x y z.");
+    private static int[] parseBlockPosition(String text) throws CommandSyntaxException {
+        String trimmedText = text.trim();
+        if (trimmedText.isEmpty()) {
+            throw commandError("Position must be formatted as x y z.");
         }
-        return new int[] {
-                Integer.parseInt(parts[0]),
-                Integer.parseInt(parts[1]),
-                Integer.parseInt(parts[2])
-        };
+        String[] parts = trimmedText.split("\\s+");
+        if (parts.length != 3) {
+            throw commandError("Position must be formatted as x y z.");
+        }
+        try {
+            return new int[] {
+                    Integer.parseInt(parts[0]),
+                    Integer.parseInt(parts[1]),
+                    Integer.parseInt(parts[2])
+            };
+        } catch (NumberFormatException exception) {
+            throw commandError("Position coordinates must be valid integers.");
+        }
+    }
+
+    private static List<Region> allRegions(MinecraftServer server) {
+        List<Region> regions = new ArrayList<>();
+        for (ServerLevel level : server.getAllLevels()) {
+            regions.addAll(SERVICE.list(level));
+        }
+        return List.copyOf(regions);
+    }
+
+    private static CommandSyntaxException commandError(String message) {
+        return new SimpleCommandExceptionType(Component.literal(message)).create();
     }
 }
