@@ -14,11 +14,26 @@ public record Region(
         long updatedAt
 ) {
     public Region {
+        if (id == null) {
+            throw new IllegalArgumentException("Region id cannot be null.");
+        }
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Region name cannot be blank.");
         }
         if (dimension == null || dimension.isBlank()) {
             throw new IllegalArgumentException("Region dimension cannot be blank.");
+        }
+        if (color == null) {
+            throw new IllegalArgumentException("Region color cannot be null.");
+        }
+        if (category == null || category.isBlank()) {
+            throw new IllegalArgumentException("Region category cannot be blank.");
+        }
+        if (iconName == null || iconName.isBlank()) {
+            throw new IllegalArgumentException("Region icon name cannot be blank.");
+        }
+        if (points == null) {
+            throw new IllegalArgumentException("Region points cannot be null.");
         }
         points = List.copyOf(points);
     }

@@ -29,4 +29,78 @@ class RegionTest {
     void blankRegionIdIsRejected() {
         assertThrows(IllegalArgumentException.class, () -> new RegionId(" "));
     }
+
+    @Test
+    void nullRequiredRegionFieldsAreRejected() {
+        assertAll(
+                () -> assertThrows(IllegalArgumentException.class, () -> new Region(
+                        null,
+                        "Spawn",
+                        "minecraft:overworld",
+                        new ArgbColor(0x8000FF00),
+                        "default",
+                        "home",
+                        List.of(new RegionPoint(0, 0), new RegionPoint(16, 0), new RegionPoint(16, 16)),
+                        1L,
+                        2L
+                )),
+                () -> assertThrows(IllegalArgumentException.class, () -> new Region(
+                        new RegionId("spawn"),
+                        "Spawn",
+                        "minecraft:overworld",
+                        null,
+                        "default",
+                        "home",
+                        List.of(new RegionPoint(0, 0), new RegionPoint(16, 0), new RegionPoint(16, 16)),
+                        1L,
+                        2L
+                )),
+                () -> assertThrows(IllegalArgumentException.class, () -> new Region(
+                        new RegionId("spawn"),
+                        "Spawn",
+                        "minecraft:overworld",
+                        new ArgbColor(0x8000FF00),
+                        " ",
+                        "home",
+                        List.of(new RegionPoint(0, 0), new RegionPoint(16, 0), new RegionPoint(16, 16)),
+                        1L,
+                        2L
+                )),
+                () -> assertThrows(IllegalArgumentException.class, () -> new Region(
+                        new RegionId("spawn"),
+                        "Spawn",
+                        "minecraft:overworld",
+                        new ArgbColor(0x8000FF00),
+                        "default",
+                        " ",
+                        List.of(new RegionPoint(0, 0), new RegionPoint(16, 0), new RegionPoint(16, 16)),
+                        1L,
+                        2L
+                )),
+                () -> assertThrows(IllegalArgumentException.class, () -> new Region(
+                        new RegionId("spawn"),
+                        "Spawn",
+                        "minecraft:overworld",
+                        new ArgbColor(0x8000FF00),
+                        "default",
+                        "home",
+                        null,
+                        1L,
+                        2L
+                ))
+        );
+    }
+
+    @Test
+    void pointMarkerRequiresTargetPlayer() {
+        assertThrows(IllegalArgumentException.class, () -> new PointMarker(
+                null,
+                "player",
+                "home",
+                "Spawn",
+                0,
+                64,
+                0
+        ));
+    }
 }

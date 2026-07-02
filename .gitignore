@@ -1,9 +1,14 @@
 .gradle/
 build/
+bin/
 out/
 run/
+run-data/
 .tmp/
 *.log
 *.hprof
 .idea/
 *.iml
+.classpath
+.project
+.settings/

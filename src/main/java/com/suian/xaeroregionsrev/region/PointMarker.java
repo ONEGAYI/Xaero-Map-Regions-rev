@@ -12,6 +12,9 @@ public record PointMarker(
         int z
 ) {
     public PointMarker {
+        if (targetPlayer == null) {
+            throw new IllegalArgumentException("Point marker target player cannot be null.");
+        }
         if (mode == null || mode.isBlank()) {
             throw new IllegalArgumentException("Point marker mode cannot be blank.");
         }
