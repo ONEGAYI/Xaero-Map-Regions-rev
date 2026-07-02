@@ -22,6 +22,8 @@ minecraft {
             workingDirectory project.file('run')
             property 'forge.logging.markers', 'REGISTRIES'
             property 'forge.logging.console.level', 'debug'
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${buildDir}/createSrgToMcp/output.srg"
             mods {
                 "${mod_id}" {
                     source sourceSets.main
@@ -55,10 +57,18 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 repositories {
     mavenCentral()
+    flatDir {
+        dirs 'libs/runtime'
+    }
 }
 
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+
+    def xaeroWorldMapRuntimeJar = file('libs/runtime/xaeroworldmap-forge-1.20.1-1.41.2.jar')
+    if (xaeroWorldMapRuntimeJar.exists()) {
+        runtimeOnly fg.deobf('local.xaero:xaeroworldmap-forge-1.20.1:1.41.2')
+    }
 
     testImplementation platform('org.junit:junit-bom:5.10.2')
     testImplementation 'org.junit.jupiter:junit-jupiter'
@@ -66,6 +76,10 @@ dependencies {
 
 tasks.named('test', Test) {
     useJUnitPlatform()
+}
+
+tasks.matching { it.name == 'runClient' }.configureEach {
+    dependsOn 'createSrgToMcp'
 }
 
 tasks.named('processResources', ProcessResources).configure {
