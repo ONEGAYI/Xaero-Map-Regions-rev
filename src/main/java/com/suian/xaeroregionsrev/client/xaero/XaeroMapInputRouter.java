@@ -14,7 +14,10 @@ public final class XaeroMapInputRouter {
     public enum KeyAction {
         TOGGLE_EDIT_MODE,
         OPEN_REGION_MANAGER,
+        UNDO_DRAFT_POINT,
+        REDO_DRAFT_POINT,
         SUBMIT_DRAFT,
+        CLEAR_DRAFT,
         ESCAPE
     }
 
@@ -37,9 +40,22 @@ public final class XaeroMapInputRouter {
                 yield Result.CONSUMED;
             }
             case OPEN_REGION_MANAGER -> Result.OPEN_MANAGER;
+            case UNDO_DRAFT_POINT -> session.undoDraftPoint() == RegionEditSession.HistoryResult.CHANGED
+                    ? Result.CONSUMED
+                    : Result.IGNORED;
+            case REDO_DRAFT_POINT -> session.redoDraftPoint() == RegionEditSession.HistoryResult.CHANGED
+                    ? Result.CONSUMED
+                    : Result.IGNORED;
             case SUBMIT_DRAFT -> overlayRouter.handleEnter() == RegionEditorOverlay.Action.OPEN_CREATE_FORM
                     ? Result.OPEN_CREATE_FORM
                     : Result.IGNORED;
+            case CLEAR_DRAFT -> {
+                if (session.draftPoints().isEmpty()) {
+                    yield Result.IGNORED;
+                }
+                session.clearDraft();
+                yield Result.CONSUMED;
+            }
             case ESCAPE -> session.handleEscape() == RegionEditSession.EscapeResult.IGNORED
                     ? Result.IGNORED
                     : Result.CONSUMED;

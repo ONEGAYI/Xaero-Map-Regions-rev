@@ -59,7 +59,7 @@ public final class XaeroMapOverlayRenderer {
             XaeroMapOverlayController.renderRegionDecorations(graphics, screen, region, projected, mouseX, mouseY);
             renderedRegions++;
         }
-        XaeroMapOverlayController.renderEditor(graphics, screen);
+        XaeroMapOverlayController.renderEditor(graphics, screen, mouseX, mouseY);
         logRender(screen, regions.size(), renderedRegions, currentDimension);
     }
 

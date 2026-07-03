@@ -26,7 +26,49 @@ class RegionEditorOverlayTest {
         RegionEditorOverlay.Rect active = RegionEditorOverlay.editButtonBounds(800, 600);
 
         assertEquals(inactive, active);
+        assertEquals(22, inactive.width());
+        assertEquals(22, inactive.height());
         assertTrue(inactive.contains(inactive.x() + 1, inactive.y() + 1));
+    }
+
+    @Test
+    void toolbarActionsAppearOnlyInEditingModeAndMapToStableHitboxes() {
+        RegionEditorOverlay.Rect addPoint = RegionEditorOverlay.toolbarActionBounds(
+                800, 600, RegionEditorOverlay.ToolbarAction.ADD_DRAFT_POINT_HINT);
+        RegionEditorOverlay.Rect manager = RegionEditorOverlay.toolbarActionBounds(
+                800, 600, RegionEditorOverlay.ToolbarAction.OPEN_REGION_MANAGER);
+        RegionEditorOverlay.Rect undo = RegionEditorOverlay.toolbarActionBounds(
+                800, 600, RegionEditorOverlay.ToolbarAction.UNDO_DRAFT_POINT);
+        RegionEditorOverlay.Rect redo = RegionEditorOverlay.toolbarActionBounds(
+                800, 600, RegionEditorOverlay.ToolbarAction.REDO_DRAFT_POINT);
+        RegionEditorOverlay.Rect submit = RegionEditorOverlay.toolbarActionBounds(
+                800, 600, RegionEditorOverlay.ToolbarAction.SUBMIT_DRAFT);
+        RegionEditorOverlay.Rect clear = RegionEditorOverlay.toolbarActionBounds(
+                800, 600, RegionEditorOverlay.ToolbarAction.CLEAR_DRAFT);
+
+        assertEquals(22, addPoint.width());
+        assertEquals(22, addPoint.height());
+        assertTrue(addPoint.x() < manager.x());
+        assertTrue(manager.x() < submit.x());
+        assertTrue(manager.x() < undo.x());
+        assertTrue(undo.x() < redo.x());
+        assertTrue(redo.x() < submit.x());
+        assertTrue(submit.x() < clear.x());
+        assertTrue(clear.x() < RegionEditorOverlay.editButtonBounds(800, 600).x());
+
+        assertEquals(RegionEditorOverlay.ToolbarAction.ADD_DRAFT_POINT_HINT,
+                RegionEditorOverlay.toolbarActionAt(addPoint.x() + 1, addPoint.y() + 1, 800, 600, true).orElseThrow());
+        assertEquals(RegionEditorOverlay.ToolbarAction.OPEN_REGION_MANAGER,
+                RegionEditorOverlay.toolbarActionAt(manager.x() + 1, manager.y() + 1, 800, 600, true).orElseThrow());
+        assertEquals(RegionEditorOverlay.ToolbarAction.UNDO_DRAFT_POINT,
+                RegionEditorOverlay.toolbarActionAt(undo.x() + 1, undo.y() + 1, 800, 600, true).orElseThrow());
+        assertEquals(RegionEditorOverlay.ToolbarAction.REDO_DRAFT_POINT,
+                RegionEditorOverlay.toolbarActionAt(redo.x() + 1, redo.y() + 1, 800, 600, true).orElseThrow());
+        assertEquals(RegionEditorOverlay.ToolbarAction.SUBMIT_DRAFT,
+                RegionEditorOverlay.toolbarActionAt(submit.x() + 1, submit.y() + 1, 800, 600, true).orElseThrow());
+        assertEquals(RegionEditorOverlay.ToolbarAction.CLEAR_DRAFT,
+                RegionEditorOverlay.toolbarActionAt(clear.x() + 1, clear.y() + 1, 800, 600, true).orElseThrow());
+        assertTrue(RegionEditorOverlay.toolbarActionAt(manager.x() + 1, manager.y() + 1, 800, 600, false).isEmpty());
     }
 
     @Test

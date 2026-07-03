@@ -64,6 +64,19 @@ public final class XaeroMapOverlayController {
             return true;
         }
 
+        if (button == RegionEditorOverlay.MouseButton.LEFT) {
+            if (RegionEditorOverlay.editButtonBounds(screen.width, screen.height).contains(mouseX, mouseY)) {
+                handleKey(XaeroMapInputRouter.KeyAction.TOGGLE_EDIT_MODE, screen);
+                return true;
+            }
+            Optional<RegionEditorOverlay.ToolbarAction> toolbarAction = RegionEditorOverlay.toolbarActionAt(
+                    mouseX, mouseY, screen.width, screen.height, SESSION.isEditing());
+            if (toolbarAction.isPresent()) {
+                handleToolbarAction(toolbarAction.get(), screen);
+                return true;
+            }
+        }
+
         RegionPoint worldPoint = PROJECTION.unproject(screen, mouseX, mouseY);
         RegionEditorOverlay.Action action = ROUTER.handleMouse(
                 button,
@@ -88,11 +101,12 @@ public final class XaeroMapOverlayController {
         renderLabel(graphics, screen, region, projected, mouseX, mouseY);
     }
 
-    public static void renderEditor(GuiGraphics graphics, Screen screen) {
+    public static void renderEditor(GuiGraphics graphics, Screen screen, int mouseX, int mouseY) {
         if (SESSION.isEditing()) {
             RegionEditorOverlay.renderDraft(graphics, project(SESSION.draftPoints(), screen));
         }
-        RegionEditorOverlay.renderButton(graphics, screen.width, screen.height, SESSION.isEditing());
+        RegionEditorOverlay.renderToolbar(graphics, screen.width, screen.height, SESSION.isEditing(), mouseX, mouseY);
+        RegionEditorOverlay.renderButton(graphics, screen.width, screen.height, SESSION.isEditing(), mouseX, mouseY);
         if (contextMenu != null) {
             contextMenu.render(graphics);
         }
@@ -158,6 +172,18 @@ public final class XaeroMapOverlayController {
 
     private static void openCreateForm(Screen previous) {
         Minecraft.getInstance().setScreen(RegionStyleEditScreen.create(previous, SESSION.draftPoints(), SESSION::clearDraft));
+    }
+
+    private static void handleToolbarAction(RegionEditorOverlay.ToolbarAction action, Screen screen) {
+        switch (action) {
+            case ADD_DRAFT_POINT_HINT -> {
+            }
+            case OPEN_REGION_MANAGER -> handleKey(XaeroMapInputRouter.KeyAction.OPEN_REGION_MANAGER, screen);
+            case UNDO_DRAFT_POINT -> handleKey(XaeroMapInputRouter.KeyAction.UNDO_DRAFT_POINT, screen);
+            case REDO_DRAFT_POINT -> handleKey(XaeroMapInputRouter.KeyAction.REDO_DRAFT_POINT, screen);
+            case SUBMIT_DRAFT -> handleKey(XaeroMapInputRouter.KeyAction.SUBMIT_DRAFT, screen);
+            case CLEAR_DRAFT -> handleKey(XaeroMapInputRouter.KeyAction.CLEAR_DRAFT, screen);
+        }
     }
 
     private static void handleContextCommand(Screen previous, RegionId regionId, RegionContextMenu.Command command) {

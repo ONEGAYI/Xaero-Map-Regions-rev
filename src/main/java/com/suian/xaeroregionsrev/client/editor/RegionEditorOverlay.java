@@ -1,19 +1,31 @@
 package com.suian.xaeroregionsrev.client.editor;
 
 import com.suian.xaeroregionsrev.client.xaero.PolygonFillRenderer;
+import com.suian.xaeroregionsrev.XaeroRegionsRev;
 import com.suian.xaeroregionsrev.region.Region;
 import com.suian.xaeroregionsrev.region.RegionPoint;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import org.joml.Vector2f;
 
 import java.util.List;
+import java.util.Optional;
 
 public final class RegionEditorOverlay {
-    public static final int EDIT_BUTTON_WIDTH = 72;
-    public static final int EDIT_BUTTON_HEIGHT = 20;
+    public static final int EDIT_BUTTON_WIDTH = 22;
+    public static final int EDIT_BUTTON_HEIGHT = 22;
     private static final int EDIT_BUTTON_MARGIN = 12;
+    private static final int ICON_BUTTON_GAP = 6;
+    private static final int ICON_SIZE = 16;
+    private static final int ICON_PADDING = 3;
+    private static final int ICON_TEXTURE_WIDTH = 128;
+    private static final int ICON_TEXTURE_HEIGHT = 16;
+    private static final int EDIT_ICON_INDEX = 0;
+    private static final int EXIT_EDIT_ICON_INDEX = 1;
+    private static final ResourceLocation ICONS_TEXTURE = new ResourceLocation(
+            XaeroRegionsRev.MOD_ID, "textures/gui/region_editor_icons.png");
 
     private RegionEditorOverlay() {
     }
@@ -34,6 +46,31 @@ public final class RegionEditorOverlay {
         OPEN_CREATE_FORM
     }
 
+    public enum ToolbarAction {
+        ADD_DRAFT_POINT_HINT("tooltip.xaeroregionsrev.add_draft_point", 2),
+        OPEN_REGION_MANAGER("tooltip.xaeroregionsrev.open_region_manager", 3),
+        UNDO_DRAFT_POINT("tooltip.xaeroregionsrev.undo_draft_point", 4),
+        REDO_DRAFT_POINT("tooltip.xaeroregionsrev.redo_draft_point", 5),
+        SUBMIT_DRAFT("tooltip.xaeroregionsrev.submit_draft", 6),
+        CLEAR_DRAFT("tooltip.xaeroregionsrev.clear_draft", 7);
+
+        private final String tooltipKey;
+        private final int iconIndex;
+
+        ToolbarAction(String tooltipKey, int iconIndex) {
+            this.tooltipKey = tooltipKey;
+            this.iconIndex = iconIndex;
+        }
+
+        public String tooltipKey() {
+            return tooltipKey;
+        }
+
+        public int iconIndex() {
+            return iconIndex;
+        }
+    }
+
     public record ScreenPoint(float x, float y) {
     }
 
@@ -46,6 +83,29 @@ public final class RegionEditorOverlay {
     public static Rect editButtonBounds(int screenWidth, int screenHeight) {
         return new Rect(screenWidth - EDIT_BUTTON_WIDTH - EDIT_BUTTON_MARGIN, EDIT_BUTTON_MARGIN,
                 EDIT_BUTTON_WIDTH, EDIT_BUTTON_HEIGHT);
+    }
+
+    public static Rect toolbarActionBounds(int screenWidth, int screenHeight, ToolbarAction action) {
+        ToolbarAction[] actions = ToolbarAction.values();
+        Rect editButton = editButtonBounds(screenWidth, screenHeight);
+        int totalWidth = actions.length * EDIT_BUTTON_WIDTH + (actions.length - 1) * ICON_BUTTON_GAP;
+        int startX = editButton.x() - ICON_BUTTON_GAP - totalWidth;
+        int index = action.ordinal();
+        return new Rect(startX + index * (EDIT_BUTTON_WIDTH + ICON_BUTTON_GAP), editButton.y(),
+                EDIT_BUTTON_WIDTH, EDIT_BUTTON_HEIGHT);
+    }
+
+    public static Optional<ToolbarAction> toolbarActionAt(double mouseX, double mouseY, int screenWidth,
+                                                          int screenHeight, boolean editing) {
+        if (!editing) {
+            return Optional.empty();
+        }
+        for (ToolbarAction action : ToolbarAction.values()) {
+            if (toolbarActionBounds(screenWidth, screenHeight, action).contains(mouseX, mouseY)) {
+                return Optional.of(action);
+            }
+        }
+        return Optional.empty();
     }
 
     public static ScreenPoint labelAnchor(List<ScreenPoint> points) {
@@ -87,12 +147,36 @@ public final class RegionEditorOverlay {
     }
 
     public static void renderButton(GuiGraphics graphics, int screenWidth, int screenHeight, boolean editing) {
+        renderButton(graphics, screenWidth, screenHeight, editing, Integer.MIN_VALUE, Integer.MIN_VALUE);
+    }
+
+    public static void renderButton(GuiGraphics graphics, int screenWidth, int screenHeight, boolean editing,
+                                    int mouseX, int mouseY) {
         Rect bounds = editButtonBounds(screenWidth, screenHeight);
-        int fill = editing ? 0xCC2F855A : 0xCC1A365D;
-        graphics.fill(bounds.x(), bounds.y(), bounds.x() + bounds.width(), bounds.y() + bounds.height(), fill);
-        Component label = Component.translatable(editing ? "button.xaeroregionsrev.done" : "button.xaeroregionsrev.edit");
-        int textX = bounds.x() + (bounds.width() - Minecraft.getInstance().font.width(label)) / 2;
-        graphics.drawString(Minecraft.getInstance().font, label, textX, bounds.y() + 6, 0xFFFFFFFF, false);
+        drawIconButton(graphics, bounds, editing);
+        drawSpriteIcon(graphics, bounds, editing ? EXIT_EDIT_ICON_INDEX : EDIT_ICON_INDEX);
+        if (bounds.contains(mouseX, mouseY)) {
+            graphics.renderTooltip(Minecraft.getInstance().font,
+                    Component.translatable(editing
+                            ? "tooltip.xaeroregionsrev.exit_edit_region"
+                            : "tooltip.xaeroregionsrev.edit_region"), mouseX, mouseY);
+        }
+    }
+
+    public static void renderToolbar(GuiGraphics graphics, int screenWidth, int screenHeight, boolean editing,
+                                     int mouseX, int mouseY) {
+        if (!editing) {
+            return;
+        }
+        for (ToolbarAction action : ToolbarAction.values()) {
+            Rect bounds = toolbarActionBounds(screenWidth, screenHeight, action);
+            drawIconButton(graphics, bounds, false);
+            drawSpriteIcon(graphics, bounds, action.iconIndex());
+            if (bounds.contains(mouseX, mouseY)) {
+                graphics.renderTooltip(Minecraft.getInstance().font,
+                        Component.translatable(action.tooltipKey()), mouseX, mouseY);
+            }
+        }
     }
 
     public static void renderDraft(GuiGraphics graphics, List<Vector2f> points) {
@@ -129,6 +213,25 @@ public final class RegionEditorOverlay {
 
     private static void drawFilledPolygon(GuiGraphics graphics, List<Vector2f> points, int color) {
         PolygonFillRenderer.fill(graphics, points, color);
+    }
+
+    private static void drawIconButton(GuiGraphics graphics, Rect bounds, boolean active) {
+        int fill = active ? 0xCC2F855A : 0xCC1F2937;
+        int border = active ? 0xFFE2B93B : 0xFF9CA3AF;
+        graphics.fill(bounds.x(), bounds.y(), bounds.x() + bounds.width(), bounds.y() + bounds.height(), 0xAA000000);
+        graphics.fill(bounds.x() + 1, bounds.y() + 1, bounds.x() + bounds.width() - 1,
+                bounds.y() + bounds.height() - 1, fill);
+        graphics.fill(bounds.x(), bounds.y(), bounds.x() + bounds.width(), bounds.y() + 1, border);
+        graphics.fill(bounds.x(), bounds.y() + bounds.height() - 1, bounds.x() + bounds.width(),
+                bounds.y() + bounds.height(), 0xFF111827);
+        graphics.fill(bounds.x(), bounds.y(), bounds.x() + 1, bounds.y() + bounds.height(), border);
+        graphics.fill(bounds.x() + bounds.width() - 1, bounds.y(), bounds.x() + bounds.width(),
+                bounds.y() + bounds.height(), 0xFF111827);
+    }
+
+    private static void drawSpriteIcon(GuiGraphics graphics, Rect bounds, int iconIndex) {
+        graphics.blit(ICONS_TEXTURE, bounds.x() + ICON_PADDING, bounds.y() + ICON_PADDING,
+                iconIndex * ICON_SIZE, 0, ICON_SIZE, ICON_SIZE, ICON_TEXTURE_WIDTH, ICON_TEXTURE_HEIGHT);
     }
 
     public static final class ActionRouter {

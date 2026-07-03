@@ -62,6 +62,39 @@ class RegionEditSessionTest {
     }
 
     @Test
+    void undoAndRedoOperateOnDraftVertices() {
+        RegionEditSession session = new RegionEditSession();
+        session.toggleEditing();
+        RegionPoint first = new RegionPoint(0, 0);
+        RegionPoint second = new RegionPoint(10, 0);
+        session.addDraftPoint(first);
+        session.addDraftPoint(second);
+
+        assertEquals(RegionEditSession.HistoryResult.CHANGED, session.undoDraftPoint());
+        assertEquals(1, session.draftPoints().size());
+        assertEquals(first, session.draftPoints().get(0));
+
+        assertEquals(RegionEditSession.HistoryResult.CHANGED, session.redoDraftPoint());
+        assertEquals(2, session.draftPoints().size());
+        assertEquals(second, session.draftPoints().get(1));
+    }
+
+    @Test
+    void addingPointAfterUndoClearsRedoBranch() {
+        RegionEditSession session = new RegionEditSession();
+        session.toggleEditing();
+        session.addDraftPoint(new RegionPoint(0, 0));
+        session.addDraftPoint(new RegionPoint(10, 0));
+        session.undoDraftPoint();
+
+        session.addDraftPoint(new RegionPoint(20, 0));
+
+        assertEquals(RegionEditSession.HistoryResult.IGNORED, session.redoDraftPoint());
+        assertEquals(2, session.draftPoints().size());
+        assertEquals(new RegionPoint(20, 0), session.draftPoints().get(1));
+    }
+
+    @Test
     void escapeClearsDraftBeforeExitingEditMode() {
         RegionEditSession session = new RegionEditSession();
         session.toggleEditing();

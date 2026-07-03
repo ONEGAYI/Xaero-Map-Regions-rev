@@ -11,11 +11,17 @@ import java.util.Optional;
 public final class RegionEditSession {
     private boolean editing;
     private final List<RegionPoint> draftPoints = new ArrayList<>();
+    private final List<RegionPoint> redoPoints = new ArrayList<>();
     private RegionId selectedRegionId;
 
     public enum EscapeResult {
         CLEARED_DRAFT,
         EXITED_EDIT_MODE,
+        IGNORED
+    }
+
+    public enum HistoryResult {
+        CHANGED,
         IGNORED
     }
 
@@ -46,6 +52,7 @@ public final class RegionEditSession {
             return false;
         }
         draftPoints.add(point);
+        redoPoints.clear();
         return true;
     }
 
@@ -55,6 +62,23 @@ public final class RegionEditSession {
 
     public void clearDraft() {
         draftPoints.clear();
+        redoPoints.clear();
+    }
+
+    public HistoryResult undoDraftPoint() {
+        if (!editing || draftPoints.isEmpty()) {
+            return HistoryResult.IGNORED;
+        }
+        redoPoints.add(draftPoints.remove(draftPoints.size() - 1));
+        return HistoryResult.CHANGED;
+    }
+
+    public HistoryResult redoDraftPoint() {
+        if (!editing || redoPoints.isEmpty() || draftPoints.size() >= RegionLimits.MAX_POINTS_PER_REQUEST) {
+            return HistoryResult.IGNORED;
+        }
+        draftPoints.add(redoPoints.remove(redoPoints.size() - 1));
+        return HistoryResult.CHANGED;
     }
 
     public boolean canSubmitDraft() {

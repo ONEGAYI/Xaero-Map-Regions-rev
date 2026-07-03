@@ -24,6 +24,8 @@ public final class XaeroMapInputHandler {
         XaeroMapInputRouter.KeyAction action = resolveKeyAction(
                 RegionKeyMappings.TOGGLE_EDIT_MODE.get().isActiveAndMatches(key),
                 RegionKeyMappings.OPEN_REGION_MANAGER.get().isActiveAndMatches(key),
+                RegionKeyMappings.UNDO_DRAFT_POINT.get().isActiveAndMatches(key),
+                RegionKeyMappings.REDO_DRAFT_POINT.get().isActiveAndMatches(key),
                 RegionKeyMappings.SUBMIT_DRAFT.get().isActiveAndMatches(key),
                 RegionKeyMappings.CLEAR_OR_EXIT_EDIT_MODE.get().isActiveAndMatches(key),
                 event.getKeyCode()
@@ -65,10 +67,18 @@ public final class XaeroMapInputHandler {
     static XaeroMapInputRouter.KeyAction resolveKeyAction(
             boolean toggleEditModeMatches,
             boolean openManagerMatches,
+            boolean undoDraftPointMatches,
+            boolean redoDraftPointMatches,
             boolean submitDraftMatches,
             boolean clearOrExitMatches,
             int keyCode
     ) {
+        if (undoDraftPointMatches) {
+            return XaeroMapInputRouter.KeyAction.UNDO_DRAFT_POINT;
+        }
+        if (redoDraftPointMatches) {
+            return XaeroMapInputRouter.KeyAction.REDO_DRAFT_POINT;
+        }
         if (submitDraftMatches) {
             return XaeroMapInputRouter.KeyAction.SUBMIT_DRAFT;
         }
