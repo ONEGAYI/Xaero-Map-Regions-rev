@@ -35,4 +35,24 @@ class PolygonMathTest {
     void lessThanThreePointsIsInvalid() {
         assertFalse(PolygonMath.isValidPolygon(List.of(new RegionPoint(0, 0), new RegionPoint(1, 1))));
     }
+
+    @Test
+    void repeatedPointsAreInvalid() {
+        assertFalse(PolygonMath.isValidPolygon(List.of(
+                new RegionPoint(0, 0),
+                new RegionPoint(10, 0),
+                new RegionPoint(10, 10),
+                new RegionPoint(10, 0)
+        )));
+    }
+
+    @Test
+    void selfIntersectingPolygonIsInvalid() {
+        assertFalse(PolygonMath.isValidPolygon(List.of(
+                new RegionPoint(0, 0),
+                new RegionPoint(10, 10),
+                new RegionPoint(0, 10),
+                new RegionPoint(10, 0)
+        )));
+    }
 }
