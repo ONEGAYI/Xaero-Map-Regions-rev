@@ -9,7 +9,7 @@ public record DeleteRegionRequestPacket(String idText) {
     }
 
     public static void encode(DeleteRegionRequestPacket packet, FriendlyByteBuf buffer) {
-        buffer.writeUtf(packet.idText);
+        buffer.writeUtf(packet.idText, RegionLimits.MAX_NAME_LENGTH);
     }
 
     public static DeleteRegionRequestPacket decode(FriendlyByteBuf buffer) {

@@ -1,6 +1,8 @@
 package com.suian.xaeroregionsrev.client.editor;
 
 import com.suian.xaeroregionsrev.client.ClientRegionCache;
+import com.suian.xaeroregionsrev.network.RegionNetwork;
+import com.suian.xaeroregionsrev.network.payload.RegionRefreshRequestPacket;
 import com.suian.xaeroregionsrev.region.Region;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -12,7 +14,6 @@ import java.util.List;
 
 public final class RegionManagerScreen extends Screen {
     private final Screen previous;
-    private long refreshedAt;
 
     public RegionManagerScreen(Screen previous) {
         super(Component.translatable("screen.xaeroregionsrev.region_manager"));
@@ -21,7 +22,8 @@ public final class RegionManagerScreen extends Screen {
 
     @Override
     protected void init() {
-        addRenderableWidget(Button.builder(Component.translatable("button.xaeroregionsrev.refresh"), button -> refreshedAt = System.currentTimeMillis())
+        addRenderableWidget(Button.builder(Component.translatable("button.xaeroregionsrev.refresh"),
+                        button -> RegionNetwork.CHANNEL.sendToServer(new RegionRefreshRequestPacket()))
                 .bounds(width / 2 - 112, height - 32, 104, 20)
                 .build());
         addRenderableWidget(Button.builder(Component.translatable("button.xaeroregionsrev.done"), button -> minecraft.setScreen(previous))

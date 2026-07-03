@@ -16,9 +16,9 @@ public record UpdateRegionStyleRequestPacket(
     }
 
     public static void encode(UpdateRegionStyleRequestPacket packet, FriendlyByteBuf buffer) {
-        buffer.writeUtf(packet.idText);
+        buffer.writeUtf(packet.idText, RegionLimits.MAX_NAME_LENGTH);
         buffer.writeInt(packet.fillColor.value());
-        buffer.writeUtf(packet.label);
+        buffer.writeUtf(packet.label, RegionLimits.MAX_LABEL_LENGTH);
         buffer.writeInt(packet.labelColor.value());
     }
 

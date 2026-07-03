@@ -5,6 +5,7 @@ import com.suian.xaeroregionsrev.XaeroRegionsRev;
 import com.suian.xaeroregionsrev.client.ClientRegionCache;
 import com.suian.xaeroregionsrev.network.payload.CreateRegionRequestPacket;
 import com.suian.xaeroregionsrev.network.payload.DeleteRegionRequestPacket;
+import com.suian.xaeroregionsrev.network.payload.RegionRefreshRequestPacket;
 import com.suian.xaeroregionsrev.network.payload.RegionSyncPacket;
 import com.suian.xaeroregionsrev.network.payload.UpdateRegionStyleRequestPacket;
 import net.minecraft.resources.ResourceLocation;
@@ -19,7 +20,7 @@ import org.slf4j.Logger;
 
 public final class RegionNetwork {
     private static final Logger LOGGER = LogUtils.getLogger();
-    private static final String PROTOCOL_VERSION = "3";
+    private static final String PROTOCOL_VERSION = "4";
     public static final SimpleChannel CHANNEL = NetworkRegistry.ChannelBuilder
             .named(new ResourceLocation(XaeroRegionsRev.MOD_ID, "main"))
             .networkProtocolVersion(() -> PROTOCOL_VERSION)
@@ -64,6 +65,12 @@ public final class RegionNetwork {
                 .encoder(UpdateRegionStyleRequestPacket::encode)
                 .decoder(UpdateRegionStyleRequestPacket::decode)
                 .consumerMainThread(RegionEditRequestHandler::handleUpdateStyle)
+                .add();
+
+        CHANNEL.messageBuilder(RegionRefreshRequestPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
+                .encoder(RegionRefreshRequestPacket::encode)
+                .decoder(RegionRefreshRequestPacket::decode)
+                .consumerMainThread(RegionEditRequestHandler::handleRefresh)
                 .add();
     }
 

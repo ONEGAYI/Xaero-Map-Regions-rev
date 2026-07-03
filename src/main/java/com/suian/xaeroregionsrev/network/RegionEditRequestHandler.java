@@ -2,6 +2,7 @@ package com.suian.xaeroregionsrev.network;
 
 import com.suian.xaeroregionsrev.network.payload.CreateRegionRequestPacket;
 import com.suian.xaeroregionsrev.network.payload.DeleteRegionRequestPacket;
+import com.suian.xaeroregionsrev.network.payload.RegionRefreshRequestPacket;
 import com.suian.xaeroregionsrev.network.payload.RegionSyncPacket;
 import com.suian.xaeroregionsrev.network.payload.UpdateRegionStyleRequestPacket;
 import com.suian.xaeroregionsrev.platform.ForgePermissionAdapter;
@@ -124,6 +125,21 @@ public final class RegionEditRequestHandler {
                 return;
             }
             broadcastSnapshot(sender);
+        });
+        context.setPacketHandled(true);
+    }
+
+    public static void handleRefresh(RegionRefreshRequestPacket packet, Supplier<NetworkEvent.Context> contextSupplier) {
+        NetworkEvent.Context context = contextSupplier.get();
+        context.enqueueWork(() -> {
+            ServerPlayer sender = context.getSender();
+            if (sender == null) {
+                return;
+            }
+            MinecraftServer server = sender.getServer();
+            if (server != null) {
+                RegionNetwork.sendToPlayer(sender, new RegionSyncPacket(allRegions(server)));
+            }
         });
         context.setPacketHandled(true);
     }
