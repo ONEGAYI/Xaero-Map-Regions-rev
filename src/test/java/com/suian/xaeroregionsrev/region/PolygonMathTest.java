@@ -55,4 +55,23 @@ class PolygonMathTest {
                 new RegionPoint(10, 0)
         )));
     }
+
+    @Test
+    void zeroAreaPolygonIsInvalid() {
+        assertFalse(PolygonMath.isValidPolygon(List.of(
+                new RegionPoint(0, 0),
+                new RegionPoint(16, 0),
+                new RegionPoint(32, 0)
+        )));
+    }
+
+    @Test
+    void extremeCoordinatesDoNotOverflowSegmentChecks() {
+        assertTrue(PolygonMath.isValidPolygon(List.of(
+                new RegionPoint(Integer.MIN_VALUE, Integer.MIN_VALUE),
+                new RegionPoint(Integer.MAX_VALUE, Integer.MIN_VALUE),
+                new RegionPoint(Integer.MAX_VALUE, Integer.MAX_VALUE),
+                new RegionPoint(Integer.MIN_VALUE, Integer.MAX_VALUE)
+        )));
+    }
 }

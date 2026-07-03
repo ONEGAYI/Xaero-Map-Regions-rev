@@ -23,6 +23,16 @@ class DeleteRegionRequestPacketTest {
     }
 
     @Test
+    void decodeAllowsBlankIdForHandlerValidation() {
+        var buffer = new FriendlyByteBuf(Unpooled.buffer());
+        buffer.writeUtf(" ");
+
+        var decoded = DeleteRegionRequestPacket.decode(buffer);
+
+        assertEquals(" ", decoded.idText());
+    }
+
+    @Test
     void decodeRejectsTooLongId() {
         var buffer = new FriendlyByteBuf(Unpooled.buffer());
         buffer.writeUtf("i".repeat(RegionLimits.MAX_NAME_LENGTH + 1));

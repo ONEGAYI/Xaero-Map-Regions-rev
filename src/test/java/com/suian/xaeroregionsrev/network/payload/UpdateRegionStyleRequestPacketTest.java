@@ -29,6 +29,19 @@ class UpdateRegionStyleRequestPacketTest {
     }
 
     @Test
+    void decodeAllowsBlankIdForHandlerValidation() {
+        var buffer = new FriendlyByteBuf(Unpooled.buffer());
+        buffer.writeUtf(" ");
+        buffer.writeInt(0x8800FF00);
+        buffer.writeUtf("Label");
+        buffer.writeInt(0xFFFFFFFF);
+
+        var decoded = UpdateRegionStyleRequestPacket.decode(buffer);
+
+        assertEquals(" ", decoded.idText());
+    }
+
+    @Test
     void decodeRejectsTooLongIdAndLabel() {
         assertThrows(RuntimeException.class, () -> {
             var buffer = new FriendlyByteBuf(Unpooled.buffer());

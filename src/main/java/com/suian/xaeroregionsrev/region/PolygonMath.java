@@ -1,5 +1,6 @@
 package com.suian.xaeroregionsrev.region;
 
+import java.math.BigInteger;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -12,7 +13,7 @@ public final class PolygonMath {
         if (points == null || points.size() < 3 || hasRepeatedPoints(points)) {
             return false;
         }
-        return !hasSelfIntersection(points);
+        return !hasZeroArea(points) && !hasSelfIntersection(points);
     }
 
     public static boolean contains(List<RegionPoint> polygon, int x, int z) {
@@ -90,7 +91,15 @@ public final class PolygonMath {
     }
 
     private static long orientation(RegionPoint a, RegionPoint b, RegionPoint c) {
-        return (long) (b.x() - a.x()) * (c.z() - a.z()) - (long) (b.z() - a.z()) * (c.x() - a.x());
+        return Long.signum(orientationExact(a, b, c).signum());
+    }
+
+    private static BigInteger orientationExact(RegionPoint a, RegionPoint b, RegionPoint c) {
+        BigInteger abX = BigInteger.valueOf((long) b.x() - a.x());
+        BigInteger acZ = BigInteger.valueOf((long) c.z() - a.z());
+        BigInteger abZ = BigInteger.valueOf((long) b.z() - a.z());
+        BigInteger acX = BigInteger.valueOf((long) c.x() - a.x());
+        return abX.multiply(acZ).subtract(abZ.multiply(acX));
     }
 
     private static boolean onSegment(RegionPoint a, RegionPoint b, RegionPoint c) {
@@ -98,5 +107,16 @@ public final class PolygonMath {
                 && b.x() <= Math.max(a.x(), c.x())
                 && Math.min(a.z(), c.z()) <= b.z()
                 && b.z() <= Math.max(a.z(), c.z());
+    }
+
+    private static boolean hasZeroArea(List<RegionPoint> points) {
+        BigInteger doubleArea = BigInteger.ZERO;
+        for (int index = 0; index < points.size(); index++) {
+            RegionPoint current = points.get(index);
+            RegionPoint next = points.get((index + 1) % points.size());
+            doubleArea = doubleArea.add(BigInteger.valueOf(current.x()).multiply(BigInteger.valueOf(next.z()))
+                    .subtract(BigInteger.valueOf(next.x()).multiply(BigInteger.valueOf(current.z()))));
+        }
+        return doubleArea.signum() == 0;
     }
 }

@@ -59,20 +59,10 @@ public final class RegionRequestValidator {
             throw new IllegalArgumentException("Region point count cannot exceed " + RegionLimits.MAX_POINTS_PER_REQUEST + ".");
         }
         List<RegionPoint> normalizedPoints = List.copyOf(points);
-        if (!PolygonMath.isValidPolygon(normalizedPoints) || hasZeroArea(normalizedPoints)) {
+        if (!PolygonMath.isValidPolygon(normalizedPoints)) {
             throw new IllegalArgumentException("Region points must form a valid polygon.");
         }
         return normalizedPoints;
-    }
-
-    private static boolean hasZeroArea(List<RegionPoint> points) {
-        long doubleArea = 0L;
-        for (int index = 0; index < points.size(); index++) {
-            RegionPoint current = points.get(index);
-            RegionPoint next = points.get((index + 1) % points.size());
-            doubleArea += (long) current.x() * next.z() - (long) next.x() * current.z();
-        }
-        return doubleArea == 0L;
     }
 
     public record ValidatedRegionCreateRequest(

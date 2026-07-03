@@ -82,8 +82,12 @@ public final class RegionEditRequestHandler {
                 return;
             }
             ServerLevel level = sender.serverLevel();
-            if (!SERVICE.delete(level, packet.id())) {
-                sendError(sender, "Region " + packet.id().value() + " was not found.");
+            RegionId id = parseRegionId(sender, packet.idText());
+            if (id == null) {
+                return;
+            }
+            if (!SERVICE.delete(level, id)) {
+                sendError(sender, "Region " + id.value() + " was not found.");
                 return;
             }
             broadcastSnapshot(sender);
@@ -110,9 +114,13 @@ public final class RegionEditRequestHandler {
             }
 
             ServerLevel level = sender.serverLevel();
-            if (SERVICE.updateStyle(level, packet.id(), request.fillColor(), request.label(), request.labelColor(),
+            RegionId id = parseRegionId(sender, packet.idText());
+            if (id == null) {
+                return;
+            }
+            if (SERVICE.updateStyle(level, id, request.fillColor(), request.label(), request.labelColor(),
                     Instant.now().toEpochMilli()).isEmpty()) {
-                sendError(sender, "Region " + packet.id().value() + " was not found.");
+                sendError(sender, "Region " + id.value() + " was not found.");
                 return;
             }
             broadcastSnapshot(sender);
@@ -126,6 +134,15 @@ public final class RegionEditRequestHandler {
 
     private static void sendError(ServerPlayer player, String message) {
         player.sendSystemMessage(Component.literal(message));
+    }
+
+    private static RegionId parseRegionId(ServerPlayer player, String idText) {
+        try {
+            return new RegionId(idText);
+        } catch (IllegalArgumentException exception) {
+            sendError(player, exception.getMessage());
+            return null;
+        }
     }
 
     private static void broadcastSnapshot(ServerPlayer sender) {
