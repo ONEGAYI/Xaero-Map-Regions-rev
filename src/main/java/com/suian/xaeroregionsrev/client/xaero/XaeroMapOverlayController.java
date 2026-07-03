@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 
 public final class XaeroMapOverlayController {
+    private static final int MAX_INLINE_LABEL_CHARACTERS = 18;
     private static final RegionEditSession SESSION = new RegionEditSession();
     private static final XaeroMapInputRouter ROUTER = new XaeroMapInputRouter(SESSION);
     private static final MapProjectionAdapter PROJECTION = MapProjectionAdapter.shared();
@@ -81,9 +82,10 @@ public final class XaeroMapOverlayController {
         return action != RegionEditorOverlay.Action.IGNORED;
     }
 
-    public static void renderRegionDecorations(GuiGraphics graphics, Screen screen, Region region, List<Vector2f> projected) {
+    public static void renderRegionDecorations(GuiGraphics graphics, Screen screen, Region region, List<Vector2f> projected,
+                                               int mouseX, int mouseY) {
         renderSelectedOutline(graphics, region, projected);
-        renderLabel(graphics, screen, region, projected);
+        renderLabel(graphics, screen, region, projected, mouseX, mouseY);
     }
 
     public static void renderEditor(GuiGraphics graphics, Screen screen) {
@@ -108,18 +110,27 @@ public final class XaeroMapOverlayController {
         }
     }
 
-    private static void renderLabel(GuiGraphics graphics, Screen screen, Region region, List<Vector2f> projected) {
+    private static void renderLabel(GuiGraphics graphics, Screen screen, Region region, List<Vector2f> projected,
+                                    int mouseX, int mouseY) {
         List<RegionEditorOverlay.ScreenPoint> points = projected.stream()
                 .map(point -> new RegionEditorOverlay.ScreenPoint(point.x(), point.y()))
                 .toList();
+        boolean hovered = RegionLabelDisplay.isHovered(points, mouseX, mouseY);
+        if (hovered) {
+            graphics.renderTooltip(Minecraft.getInstance().font, Component.literal(region.label()), mouseX, mouseY);
+        }
+        if (!RegionLabelDisplay.shouldRenderInlineLabel(points, screen.width, screen.height)) {
+            return;
+        }
         RegionEditorOverlay.ScreenPoint anchor = RegionEditorOverlay.labelAnchor(points);
         if (anchor.x() < 0 || anchor.y() < 0 || anchor.x() > screen.width || anchor.y() > screen.height) {
             return;
         }
-        int labelWidth = Minecraft.getInstance().font.width(region.label());
+        String label = RegionLabelDisplay.truncate(region.label(), MAX_INLINE_LABEL_CHARACTERS);
+        int labelWidth = Minecraft.getInstance().font.width(label);
         graphics.drawString(
                 Minecraft.getInstance().font,
-                region.label(),
+                label,
                 Math.round(anchor.x() - labelWidth / 2.0F),
                 Math.round(anchor.y() - 4.0F),
                 region.labelColor().value(),

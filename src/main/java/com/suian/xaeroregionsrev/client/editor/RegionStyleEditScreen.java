@@ -64,12 +64,13 @@ public final class RegionStyleEditScreen extends Screen {
         }
     }
 
-    public static CreateValues createValues(String name, String fillColorText, String label, String labelColorText,
+    public static CreateValues createValues(String label, String fillColorText, String labelColorText,
                                             List<RegionPoint> points) {
         ArgbColor fillColor = RegionColorParser.parse(fillColorText);
         ArgbColor labelColor = RegionColorParser.parse(labelColorText);
+        String generatedName = "region_" + System.currentTimeMillis();
         RegionRequestValidator.ValidatedRegionCreateRequest request =
-                RegionRequestValidator.validateCreate(name, fillColor, label, labelColor, points);
+                RegionRequestValidator.validateCreate(generatedName, fillColor, label, labelColor, points);
         return new CreateValues(request.name(), request.fillColor(), request.label(), request.labelColor(), request.points());
     }
 
@@ -91,20 +92,21 @@ public final class RegionStyleEditScreen extends Screen {
     protected void init() {
         int formWidth = 220;
         int left = (width - formWidth) / 2;
-        int top = Math.max(32, height / 2 - 78);
-        nameBox = new EditBox(font, left, top + 18, formWidth, 20, Component.translatable("field.xaeroregionsrev.name"));
-        labelBox = new EditBox(font, left, top + 50, formWidth, 20, Component.translatable("field.xaeroregionsrev.label"));
-        fillColorBox = new EditBox(font, left, top + 82, formWidth, 20, Component.translatable("field.xaeroregionsrev.fill_color"));
-        labelColorBox = new EditBox(font, left, top + 114, formWidth, 20, Component.translatable("field.xaeroregionsrev.label_color"));
-        nameBox.setMaxLength(RegionLimits.MAX_NAME_LENGTH);
+        int top = Math.max(32, height / 2 - (region == null ? 62 : 78));
+        int row = region == null ? 0 : 32;
+        if (region != null) {
+            nameBox = new EditBox(font, left, top + 18, formWidth, 20, Component.translatable("field.xaeroregionsrev.name"));
+            nameBox.setMaxLength(RegionLimits.MAX_NAME_LENGTH);
+        }
+        labelBox = new EditBox(font, left, top + 18 + row, formWidth, 20, Component.translatable("field.xaeroregionsrev.label"));
+        fillColorBox = new EditBox(font, left, top + 50 + row, formWidth, 20, Component.translatable("field.xaeroregionsrev.fill_color"));
+        labelColorBox = new EditBox(font, left, top + 82 + row, formWidth, 20, Component.translatable("field.xaeroregionsrev.label_color"));
         labelBox.setMaxLength(RegionLimits.MAX_LABEL_LENGTH);
         fillColorBox.setMaxLength(10);
         labelColorBox.setMaxLength(10);
 
         if (region == null) {
-            String generatedName = "region_" + System.currentTimeMillis();
-            nameBox.setValue(generatedName);
-            labelBox.setValue(generatedName);
+            labelBox.setValue("region_" + System.currentTimeMillis());
             fillColorBox.setValue("#6600AAFF");
             labelColorBox.setValue("#FFFFFFFF");
         } else {
@@ -116,25 +118,29 @@ public final class RegionStyleEditScreen extends Screen {
             applyEditMode();
         }
 
-        addRenderableWidget(nameBox);
+        if (nameBox != null) {
+            addRenderableWidget(nameBox);
+        }
         addRenderableWidget(labelBox);
         addRenderableWidget(fillColorBox);
         addRenderableWidget(labelColorBox);
         addRenderableWidget(Button.builder(Component.translatable("button.xaeroregionsrev.save"), button -> save())
-                .bounds(left, top + 146, 104, 20)
+                .bounds(left, top + 114 + row, 104, 20)
                 .build());
         addRenderableWidget(Button.builder(Component.translatable("button.xaeroregionsrev.cancel"), button -> minecraft.setScreen(previous))
-                .bounds(left + 116, top + 146, 104, 20)
+                .bounds(left + 116, top + 114 + row, 104, 20)
                 .build());
-        setInitialFocus(region == null ? nameBox : labelBox);
+        setInitialFocus(labelBox);
     }
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         renderBackground(graphics);
         graphics.drawCenteredString(font, title, width / 2, Math.max(16, height / 2 - 102), 0xFFFFFFFF);
-        int left = nameBox.getX();
-        drawFieldLabel(graphics, Component.translatable("field.xaeroregionsrev.name"), left, nameBox.getY() - 10);
+        int left = labelBox.getX();
+        if (nameBox != null) {
+            drawFieldLabel(graphics, Component.translatable("field.xaeroregionsrev.name"), left, nameBox.getY() - 10);
+        }
         drawFieldLabel(graphics, Component.translatable("field.xaeroregionsrev.label"), left, labelBox.getY() - 10);
         drawFieldLabel(graphics, Component.translatable("field.xaeroregionsrev.fill_color"), left, fillColorBox.getY() - 10);
         drawFieldLabel(graphics, Component.translatable("field.xaeroregionsrev.label_color"), left, labelColorBox.getY() - 10);
@@ -153,9 +159,8 @@ public final class RegionStyleEditScreen extends Screen {
         try {
             if (region == null) {
                 CreateValues values = createValues(
-                        nameBox.getValue(),
-                        fillColorBox.getValue(),
                         labelBox.getValue(),
+                        fillColorBox.getValue(),
                         labelColorBox.getValue(),
                         draftPoints
                 );

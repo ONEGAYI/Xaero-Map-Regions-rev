@@ -40,10 +40,12 @@ public final class XaeroMapOverlayRenderer {
         }
         String currentDimension = minecraft.level.dimension().location().toString();
         PROJECTION.calibrate(screen, event.getMouseX(), event.getMouseY(), System.nanoTime());
-        renderRegions(event.getGuiGraphics(), screen, ClientRegionCache.regions(), currentDimension);
+        renderRegions(event.getGuiGraphics(), screen, ClientRegionCache.regions(), currentDimension,
+                event.getMouseX(), event.getMouseY());
     }
 
-    private static void renderRegions(GuiGraphics graphics, Screen screen, List<Region> regions, String currentDimension) {
+    private static void renderRegions(GuiGraphics graphics, Screen screen, List<Region> regions, String currentDimension,
+                                      int mouseX, int mouseY) {
         int renderedRegions = 0;
         for (Region region : regions) {
             if (region.points().size() < 3 || !region.dimension().equals(currentDimension)) {
@@ -54,7 +56,7 @@ public final class XaeroMapOverlayRenderer {
                 continue;
             }
             PolygonFillRenderer.fill(graphics, projected, region.color().value());
-            XaeroMapOverlayController.renderRegionDecorations(graphics, screen, region, projected);
+            XaeroMapOverlayController.renderRegionDecorations(graphics, screen, region, projected, mouseX, mouseY);
             renderedRegions++;
         }
         XaeroMapOverlayController.renderEditor(graphics, screen);

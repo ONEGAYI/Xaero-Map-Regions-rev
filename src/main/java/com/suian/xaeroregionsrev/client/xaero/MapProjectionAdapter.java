@@ -13,6 +13,7 @@ public final class MapProjectionAdapter {
     private static final double DEFAULT_COORDINATE_DIVISOR = 1.0D;
     private static final double DEFAULT_SCREEN_SCALE = 1.0D;
     private static final long CALIBRATION_INTERVAL_NANOS = 1_000_000_000L;
+    private static final double CALIBRATION_JITTER_THRESHOLD_BLOCKS = 0.5D;
     private static final String XAERO_GUI_MAP_CLASS = "xaero.map.gui.GuiMap";
     private static final MapProjectionAdapter SHARED = new MapProjectionAdapter();
     private MapCalibration calibration = MapCalibration.NONE;
@@ -49,7 +50,8 @@ public final class MapProjectionAdapter {
             lastCalibrationAtNanos = nowNanos;
             return;
         }
-        calibration = calibrateViewport(viewport.get(), mouseX, mouseY, xaeroMousePoint.get()).calibration();
+        MapCalibration nextCalibration = calibrateViewport(viewport.get(), mouseX, mouseY, xaeroMousePoint.get()).calibration();
+        calibration = stabilizeCalibration(calibration, nextCalibration);
         lastCalibrationAtNanos = nowNanos;
     }
 
@@ -86,6 +88,18 @@ public final class MapProjectionAdapter {
         double xaeroMapX = xaeroWorldPoint.x() / viewport.coordinateDivisor();
         double xaeroMapZ = xaeroWorldPoint.z() / viewport.coordinateDivisor();
         return viewport.withCalibration(new MapCalibration(xaeroMapX - rawMapX, xaeroMapZ - rawMapZ));
+    }
+
+    static MapCalibration stabilizeCalibration(MapCalibration current, MapCalibration next) {
+        if (current == null || current.equals(MapCalibration.NONE)) {
+            return next;
+        }
+        double deltaX = Math.abs(next.mapXOffset() - current.mapXOffset());
+        double deltaZ = Math.abs(next.mapZOffset() - current.mapZOffset());
+        if (deltaX < CALIBRATION_JITTER_THRESHOLD_BLOCKS && deltaZ < CALIBRATION_JITTER_THRESHOLD_BLOCKS) {
+            return current;
+        }
+        return next;
     }
 
     private static Optional<MapViewport> readXaeroViewport(Screen screen) {

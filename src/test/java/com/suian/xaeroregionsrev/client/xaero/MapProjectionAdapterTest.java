@@ -158,6 +158,22 @@ class MapProjectionAdapterTest {
     }
 
     @Test
+    void calibrationIgnoresSubBlockJitterAfterInitialOffset() {
+        MapProjectionAdapter.MapCalibration current = new MapProjectionAdapter.MapCalibration(0.20D, -0.20D);
+        MapProjectionAdapter.MapCalibration next = new MapProjectionAdapter.MapCalibration(0.35D, -0.05D);
+
+        assertEquals(current, MapProjectionAdapter.stabilizeCalibration(current, next));
+    }
+
+    @Test
+    void calibrationAcceptsLargeCorrection() {
+        MapProjectionAdapter.MapCalibration current = new MapProjectionAdapter.MapCalibration(0.20D, -0.20D);
+        MapProjectionAdapter.MapCalibration next = new MapProjectionAdapter.MapCalibration(1.20D, -0.20D);
+
+        assertEquals(next, MapProjectionAdapter.stabilizeCalibration(current, next));
+    }
+
+    @Test
     void calibrationIsDueImmediatelyThenWaitsForInterval() {
         assertEquals(true, MapProjectionAdapter.isCalibrationDue(100L, Long.MIN_VALUE));
         assertEquals(false, MapProjectionAdapter.isCalibrationDue(500_000_000L, 100L));

@@ -60,12 +60,24 @@ class RegionStyleEditScreenTest {
     @Test
     void createValuesRejectInvalidDraftBeforeSending() {
         assertThrows(IllegalArgumentException.class, () -> RegionStyleEditScreen.createValues(
-                "Spawn",
-                "#6600FF00",
                 "Spawn Label",
+                "#6600FF00",
                 "#FFFFFFFF",
                 List.of(new RegionPoint(0, 0), new RegionPoint(10, 0))
         ));
+    }
+
+    @Test
+    void createValuesGeneratesInternalNameFromLabel() {
+        RegionStyleEditScreen.CreateValues values = RegionStyleEditScreen.createValues(
+                "Old Growth Birch Forest",
+                "#6600FF00",
+                "#FFFFFFFF",
+                List.of(new RegionPoint(0, 0), new RegionPoint(10, 0), new RegionPoint(10, 10))
+        );
+
+        assertEquals("Old Growth Birch Forest", values.label());
+        assertEquals(true, values.name().startsWith("region_"));
     }
 
     private static Region region() {
