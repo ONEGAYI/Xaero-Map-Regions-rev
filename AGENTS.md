@@ -35,11 +35,15 @@
 ├── docs/
 │   └── superpowers/
 │       ├── plans/
-│       │   └── 2026-07-02-xaero-map-regions-mvp-implementation.md
-│       │       Forge 47.3.33 区域标注 MVP 实现计划。
+│       │   ├── 2026-07-02-xaero-map-regions-mvp-implementation.md
+│       │   │   Forge 47.3.33 区域标注 MVP 实现计划。
+│       │   └── 2026-07-03-map-labels-and-editor-implementation.md
+│       │       地图标注、可改快捷键和地图内编辑实现计划。
 │       └── specs/
-│           └── 2026-07-02-xaero-map-regions-mvp-design.md
-│               Forge 1.20.1 版 Xaero 区域标注 MVP 设计文档。
+│           ├── 2026-07-02-xaero-map-regions-mvp-design.md
+│           │   Forge 1.20.1 版 Xaero 区域标注 MVP 设计文档。
+│           └── 2026-07-03-map-labels-and-editor-design.md
+│               地图标注、可改快捷键和地图内编辑设计文档。
 ├── src/main/java/com/suian/xaeroregionsrev/
 │   ├── client/
 │   │   客户端区域缓存与 Xaero World Map 覆盖层渲染适配。
