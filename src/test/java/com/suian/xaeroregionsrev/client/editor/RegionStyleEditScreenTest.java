@@ -16,44 +16,44 @@ class RegionStyleEditScreenTest {
     void fillColorCommandPreservesLabelAndLabelColor() {
         RegionStyleEditScreen.StyleValues values = RegionStyleEditScreen.updateValues(
                 region(),
-                RegionContextMenu.Command.EDIT_FILL_COLOR,
+                RegionContextMenu.Command.EDIT,
                 "#AA112233",
                 "Changed Label",
                 "#FF000000"
         );
 
         assertEquals(new ArgbColor(0xAA112233), values.fillColor());
-        assertEquals("Old Label", values.label());
-        assertEquals(new ArgbColor(0xFFFFFFFF), values.labelColor());
+        assertEquals("Changed Label", values.label());
+        assertEquals(new ArgbColor(0xFF000000), values.labelColor());
     }
 
     @Test
-    void labelTextCommandPreservesColors() {
+    void editCommandAppliesAllFieldsFromForm() {
         RegionStyleEditScreen.StyleValues values = RegionStyleEditScreen.updateValues(
                 region(),
-                RegionContextMenu.Command.EDIT_LABEL_TEXT,
+                RegionContextMenu.Command.EDIT,
                 "#AA112233",
                 "Changed Label",
                 "#FF000000"
         );
 
-        assertEquals(new ArgbColor(0x6600FF00), values.fillColor());
+        assertEquals(new ArgbColor(0xAA112233), values.fillColor());
         assertEquals("Changed Label", values.label());
-        assertEquals(new ArgbColor(0xFFFFFFFF), values.labelColor());
+        assertEquals(new ArgbColor(0xFF000000), values.labelColor());
     }
 
     @Test
     void labelColorCommandPreservesFillAndLabel() {
         RegionStyleEditScreen.StyleValues values = RegionStyleEditScreen.updateValues(
                 region(),
-                RegionContextMenu.Command.EDIT_LABEL_COLOR,
+                RegionContextMenu.Command.EDIT,
                 "#AA112233",
                 "Changed Label",
                 "#FF000000"
         );
 
-        assertEquals(new ArgbColor(0x6600FF00), values.fillColor());
-        assertEquals("Old Label", values.label());
+        assertEquals(new ArgbColor(0xAA112233), values.fillColor());
+        assertEquals("Changed Label", values.label());
         assertEquals(new ArgbColor(0xFF000000), values.labelColor());
     }
 

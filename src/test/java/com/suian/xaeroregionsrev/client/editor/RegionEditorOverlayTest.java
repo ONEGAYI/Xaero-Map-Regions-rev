@@ -119,9 +119,7 @@ class RegionEditorOverlayTest {
     @Test
     void contextMenuRoutesActionsToCommands() {
         assertEquals(RegionContextMenu.Command.DELETE, RegionContextMenu.commandFor(0));
-        assertEquals(RegionContextMenu.Command.EDIT_FILL_COLOR, RegionContextMenu.commandFor(1));
-        assertEquals(RegionContextMenu.Command.EDIT_LABEL_TEXT, RegionContextMenu.commandFor(2));
-        assertEquals(RegionContextMenu.Command.EDIT_LABEL_COLOR, RegionContextMenu.commandFor(3));
-        assertThrows(IllegalArgumentException.class, () -> RegionContextMenu.commandFor(4));
+        assertEquals(RegionContextMenu.Command.EDIT, RegionContextMenu.commandFor(1));
+        assertThrows(IllegalArgumentException.class, () -> RegionContextMenu.commandFor(2));
     }
 }

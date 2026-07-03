@@ -15,9 +15,7 @@ public final class RegionContextMenu {
 
     public enum Command {
         DELETE,
-        EDIT_FILL_COLOR,
-        EDIT_LABEL_TEXT,
-        EDIT_LABEL_COLOR
+        EDIT
     }
 
     public RegionContextMenu(RegionId regionId, int x, int y) {
@@ -65,9 +63,7 @@ public final class RegionContextMenu {
     public static Component label(Command command) {
         return switch (command) {
             case DELETE -> Component.translatable("menu.xaeroregionsrev.delete");
-            case EDIT_FILL_COLOR -> Component.translatable("menu.xaeroregionsrev.fill_color");
-            case EDIT_LABEL_TEXT -> Component.translatable("menu.xaeroregionsrev.label_text");
-            case EDIT_LABEL_COLOR -> Component.translatable("menu.xaeroregionsrev.label_color");
+            case EDIT -> Component.translatable("menu.xaeroregionsrev.edit");
         };
     }
 }

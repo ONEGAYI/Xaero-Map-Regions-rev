@@ -1,5 +1,6 @@
 package com.suian.xaeroregionsrev.client.editor;
 
+import com.suian.xaeroregionsrev.XaeroRegionsRev;
 import com.suian.xaeroregionsrev.network.RegionNetwork;
 import com.suian.xaeroregionsrev.network.payload.CreateRegionRequestPacket;
 import com.suian.xaeroregionsrev.network.payload.UpdateRegionStyleRequestPacket;
@@ -14,6 +15,7 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.List;
 
@@ -22,6 +24,9 @@ public final class RegionStyleEditScreen extends Screen {
     private static final int COLOR_BOX_WIDTH = 178;
     private static final int COLOR_PICKER_BUTTON_WIDTH = 36;
     private static final int COLOR_PICKER_BUTTON_GAP = 6;
+    private static final int COLOR_PICKER_ICON_SIZE = 16;
+    private static final ResourceLocation COLOR_PICKER_ICON = new ResourceLocation(
+            XaeroRegionsRev.MOD_ID, "textures/gui/color_palette_icon.png");
     private final Screen previous;
     private final Region region;
     private final RegionContextMenu.Command editCommand;
@@ -31,6 +36,8 @@ public final class RegionStyleEditScreen extends Screen {
     private EditBox labelBox;
     private EditBox fillColorBox;
     private EditBox labelColorBox;
+    private Button fillColorPickerButton;
+    private Button labelColorPickerButton;
     private Component errorMessage;
     private FormText formTextOverride;
 
@@ -51,7 +58,7 @@ public final class RegionStyleEditScreen extends Screen {
     }
 
     public static RegionStyleEditScreen edit(Screen previous, Region region) {
-        return edit(previous, region, RegionContextMenu.Command.EDIT_LABEL_TEXT);
+        return edit(previous, region, RegionContextMenu.Command.EDIT);
     }
 
     public static RegionStyleEditScreen edit(Screen previous, Region region, RegionContextMenu.Command command) {
@@ -89,13 +96,9 @@ public final class RegionStyleEditScreen extends Screen {
 
     public static StyleValues updateValues(Region region, RegionContextMenu.Command command, String fillColorText,
                                             String labelText, String labelColorText) {
-        ArgbColor fillColor = command == RegionContextMenu.Command.EDIT_FILL_COLOR
-                ? RegionColorParser.parse(fillColorText)
-                : region.color();
-        String label = command == RegionContextMenu.Command.EDIT_LABEL_TEXT ? labelText.trim() : region.label();
-        ArgbColor labelColor = command == RegionContextMenu.Command.EDIT_LABEL_COLOR
-                ? RegionColorParser.parse(labelColorText)
-                : region.labelColor();
+        ArgbColor fillColor = RegionColorParser.parse(fillColorText);
+        String label = labelText.trim();
+        ArgbColor labelColor = RegionColorParser.parse(labelColorText);
         RegionRequestValidator.ValidatedRegionStyleRequest request =
                 RegionRequestValidator.validateStyle(fillColor, label, labelColor);
         return new StyleValues(request.fillColor(), request.label(), request.labelColor());
@@ -148,16 +151,18 @@ public final class RegionStyleEditScreen extends Screen {
         addRenderableWidget(labelBox);
         addRenderableWidget(fillColorBox);
         addRenderableWidget(labelColorBox);
-        addRenderableWidget(Button.builder(Component.literal("PAL"),
+        fillColorPickerButton = addRenderableWidget(Button.builder(Component.empty(),
                         button -> openColorPicker(ColorTarget.FILL,
                                 Component.translatable("field.xaeroregionsrev.fill_color")))
                 .bounds(colorPickerButtonX(left), fillColorBox.getY(), COLOR_PICKER_BUTTON_WIDTH, 20)
-                .build()).active = region == null || editCommand == RegionContextMenu.Command.EDIT_FILL_COLOR;
-        addRenderableWidget(Button.builder(Component.literal("PAL"),
+                .build());
+        fillColorPickerButton.active = region == null || editCommand == RegionContextMenu.Command.EDIT;
+        labelColorPickerButton = addRenderableWidget(Button.builder(Component.empty(),
                         button -> openColorPicker(ColorTarget.LABEL,
                                 Component.translatable("field.xaeroregionsrev.label_color")))
                 .bounds(colorPickerButtonX(left), labelColorBox.getY(), COLOR_PICKER_BUTTON_WIDTH, 20)
-                .build()).active = region == null || editCommand == RegionContextMenu.Command.EDIT_LABEL_COLOR;
+                .build());
+        labelColorPickerButton.active = region == null || editCommand == RegionContextMenu.Command.EDIT;
         addRenderableWidget(Button.builder(Component.translatable("button.xaeroregionsrev.save"), button -> save())
                 .bounds(left, top + 114 + row, 104, 20)
                 .build());
@@ -182,6 +187,8 @@ public final class RegionStyleEditScreen extends Screen {
             graphics.drawCenteredString(font, errorMessage, width / 2, labelColorBox.getY() + 26, 0xFFFF7777);
         }
         super.render(graphics, mouseX, mouseY, partialTick);
+        renderColorPickerIcon(graphics, fillColorPickerButton);
+        renderColorPickerIcon(graphics, labelColorPickerButton);
     }
 
     @Override
@@ -219,9 +226,10 @@ public final class RegionStyleEditScreen extends Screen {
     }
 
     private void applyEditMode() {
-        fillColorBox.setEditable(editCommand == RegionContextMenu.Command.EDIT_FILL_COLOR);
-        labelBox.setEditable(editCommand == RegionContextMenu.Command.EDIT_LABEL_TEXT);
-        labelColorBox.setEditable(editCommand == RegionContextMenu.Command.EDIT_LABEL_COLOR);
+        boolean editable = editCommand == RegionContextMenu.Command.EDIT;
+        fillColorBox.setEditable(editable);
+        labelBox.setEditable(editable);
+        labelColorBox.setEditable(editable);
     }
 
     private void openColorPicker(ColorTarget target, Component pickerTitle) {
@@ -249,6 +257,16 @@ public final class RegionStyleEditScreen extends Screen {
 
     private int colorPickerButtonX(int formLeft) {
         return formLeft + COLOR_BOX_WIDTH + COLOR_PICKER_BUTTON_GAP;
+    }
+
+    private void renderColorPickerIcon(GuiGraphics graphics, Button button) {
+        if (button == null) {
+            return;
+        }
+        int x = button.getX() + (button.getWidth() - COLOR_PICKER_ICON_SIZE) / 2;
+        int y = button.getY() + (button.getHeight() - COLOR_PICKER_ICON_SIZE) / 2;
+        graphics.blit(COLOR_PICKER_ICON, x, y, 0, 0, COLOR_PICKER_ICON_SIZE, COLOR_PICKER_ICON_SIZE,
+                COLOR_PICKER_ICON_SIZE, COLOR_PICKER_ICON_SIZE);
     }
 
     private void drawFieldLabel(GuiGraphics graphics, Component label, int x, int y) {
