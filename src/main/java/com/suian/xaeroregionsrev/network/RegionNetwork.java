@@ -3,7 +3,10 @@ package com.suian.xaeroregionsrev.network;
 import com.mojang.logging.LogUtils;
 import com.suian.xaeroregionsrev.XaeroRegionsRev;
 import com.suian.xaeroregionsrev.client.ClientRegionCache;
+import com.suian.xaeroregionsrev.network.payload.CreateRegionRequestPacket;
+import com.suian.xaeroregionsrev.network.payload.DeleteRegionRequestPacket;
 import com.suian.xaeroregionsrev.network.payload.RegionSyncPacket;
+import com.suian.xaeroregionsrev.network.payload.UpdateRegionStyleRequestPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.api.distmarker.Dist;
@@ -16,7 +19,7 @@ import org.slf4j.Logger;
 
 public final class RegionNetwork {
     private static final Logger LOGGER = LogUtils.getLogger();
-    private static final String PROTOCOL_VERSION = "2";
+    private static final String PROTOCOL_VERSION = "3";
     public static final SimpleChannel CHANNEL = NetworkRegistry.ChannelBuilder
             .named(new ResourceLocation(XaeroRegionsRev.MOD_ID, "main"))
             .networkProtocolVersion(() -> PROTOCOL_VERSION)
@@ -43,6 +46,24 @@ public final class RegionNetwork {
                     DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ClientRegionCache.replaceAll(packet.regions()));
                     contextSupplier.get().setPacketHandled(true);
                 })
+                .add();
+
+        CHANNEL.messageBuilder(CreateRegionRequestPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
+                .encoder(CreateRegionRequestPacket::encode)
+                .decoder(CreateRegionRequestPacket::decode)
+                .consumerMainThread(RegionEditRequestHandler::handleCreate)
+                .add();
+
+        CHANNEL.messageBuilder(DeleteRegionRequestPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
+                .encoder(DeleteRegionRequestPacket::encode)
+                .decoder(DeleteRegionRequestPacket::decode)
+                .consumerMainThread(RegionEditRequestHandler::handleDelete)
+                .add();
+
+        CHANNEL.messageBuilder(UpdateRegionStyleRequestPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
+                .encoder(UpdateRegionStyleRequestPacket::encode)
+                .decoder(UpdateRegionStyleRequestPacket::decode)
+                .consumerMainThread(RegionEditRequestHandler::handleUpdateStyle)
                 .add();
     }
 

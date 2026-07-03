@@ -1,8 +1,10 @@
 package com.suian.xaeroregionsrev.service;
 
 import com.suian.xaeroregionsrev.data.RegionSavedData;
+import com.suian.xaeroregionsrev.region.ArgbColor;
 import com.suian.xaeroregionsrev.region.Region;
 import com.suian.xaeroregionsrev.region.RegionId;
+import com.suian.xaeroregionsrev.region.RegionStyleUpdater;
 import net.minecraft.server.level.ServerLevel;
 
 import java.util.Collection;
@@ -28,6 +30,26 @@ public final class RegionService {
             throw new IllegalArgumentException("Region polygon must contain at least three points.");
         }
         RegionSavedData.get(level).put(region);
+    }
+
+    public Optional<Region> updateStyle(
+            ServerLevel level,
+            RegionId id,
+            ArgbColor fillColor,
+            String label,
+            ArgbColor labelColor,
+            long now
+    ) {
+        Objects.requireNonNull(level, "Server level cannot be null.");
+        Objects.requireNonNull(id, "Region id cannot be null.");
+        RegionSavedData data = RegionSavedData.get(level);
+        Optional<Region> existing = data.find(id);
+        if (existing.isEmpty()) {
+            return Optional.empty();
+        }
+        Region updated = RegionStyleUpdater.withStyle(existing.get(), fillColor, label, labelColor, now);
+        data.put(updated);
+        return Optional.of(updated);
     }
 
     public boolean delete(ServerLevel level, RegionId id) {
