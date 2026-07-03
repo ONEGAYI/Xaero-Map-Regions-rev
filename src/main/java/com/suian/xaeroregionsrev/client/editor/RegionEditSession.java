@@ -80,4 +80,10 @@ public final class RegionEditSession {
     public Optional<RegionId> selectedRegionId() {
         return Optional.ofNullable(selectedRegionId);
     }
+
+    public void reset() {
+        editing = false;
+        clearDraft();
+        clearSelection();
+    }
 }

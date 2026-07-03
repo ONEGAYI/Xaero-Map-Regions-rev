@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import com.suian.xaeroregionsrev.client.RegionKeyMappings;
 import com.suian.xaeroregionsrev.client.editor.RegionEditorOverlay;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraftforge.client.event.ScreenEvent;
 import org.lwjgl.glfw.GLFW;
@@ -15,6 +16,9 @@ public final class XaeroMapInputHandler {
     public static void onKeyPressed(ScreenEvent.KeyPressed.Pre event) {
         Screen screen = event.getScreen();
         if (!XaeroScreenDetector.isWorldMapScreen(screen)) {
+            return;
+        }
+        if (screen.getFocused() instanceof EditBox) {
             return;
         }
         InputConstants.Key key = InputConstants.getKey(event.getKeyCode(), event.getScanCode());

@@ -30,6 +30,33 @@ class RegionEditorOverlayTest {
     }
 
     @Test
+    void draftPreviewFillStartsAtThreePoints() {
+        assertFalse(RegionEditorOverlay.shouldRenderDraftFill(List.of(
+                new RegionEditorOverlay.ScreenPoint(0, 0),
+                new RegionEditorOverlay.ScreenPoint(10, 0)
+        )));
+        assertTrue(RegionEditorOverlay.shouldRenderDraftFill(List.of(
+                new RegionEditorOverlay.ScreenPoint(0, 0),
+                new RegionEditorOverlay.ScreenPoint(10, 0),
+                new RegionEditorOverlay.ScreenPoint(10, 10)
+        )));
+    }
+
+    @Test
+    void projectedBoundsVisibilityUsesScreenIntersection() {
+        assertTrue(RegionEditorOverlay.isProjectedBoundsVisible(List.of(
+                new RegionEditorOverlay.ScreenPoint(-10, 10),
+                new RegionEditorOverlay.ScreenPoint(10, 10),
+                new RegionEditorOverlay.ScreenPoint(10, 20)
+        ), 100, 100));
+        assertFalse(RegionEditorOverlay.isProjectedBoundsVisible(List.of(
+                new RegionEditorOverlay.ScreenPoint(-30, 10),
+                new RegionEditorOverlay.ScreenPoint(-10, 10),
+                new RegionEditorOverlay.ScreenPoint(-10, 20)
+        ), 100, 100));
+    }
+
+    @Test
     void routerHandlesEditButtonMiddleClickAndEnter() {
         RegionEditSession session = new RegionEditSession();
         RegionEditorOverlay.ActionRouter router = new RegionEditorOverlay.ActionRouter(session);

@@ -61,4 +61,18 @@ class RegionEditSessionTest {
         assertEquals(RegionEditSession.EscapeResult.EXITED_EDIT_MODE, session.handleEscape());
         assertFalse(session.isEditing());
     }
+
+    @Test
+    void resetClearsEditingDraftAndSelection() {
+        RegionEditSession session = new RegionEditSession();
+        session.toggleEditing();
+        session.addDraftPoint(new RegionPoint(0, 0));
+        session.select(new RegionId("spawn"));
+
+        session.reset();
+
+        assertFalse(session.isEditing());
+        assertTrue(session.draftPoints().isEmpty());
+        assertTrue(session.selectedRegionId().isEmpty());
+    }
 }

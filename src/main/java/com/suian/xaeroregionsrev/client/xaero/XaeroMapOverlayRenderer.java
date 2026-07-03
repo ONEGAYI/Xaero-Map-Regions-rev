@@ -7,6 +7,7 @@ import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.logging.LogUtils;
 import com.suian.xaeroregionsrev.client.ClientRegionCache;
+import com.suian.xaeroregionsrev.region.RegionPoint;
 import com.suian.xaeroregionsrev.region.Region;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -54,10 +55,15 @@ public final class XaeroMapOverlayRenderer {
             if (region.points().size() < 3 || !region.dimension().equals(currentDimension)) {
                 continue;
             }
-            drawPolygon(graphics, screen, region);
+            List<Vector2f> projected = project(region.points(), screen);
+            if (!XaeroMapOverlayController.isProjectedRegionVisible(projected, screen.width, screen.height)) {
+                continue;
+            }
+            drawPolygon(graphics, projected, region.color().value());
+            XaeroMapOverlayController.renderRegionDecorations(graphics, screen, region, projected);
             renderedRegions++;
         }
-        XaeroMapOverlayController.render(graphics, screen, regions, currentDimension);
+        XaeroMapOverlayController.renderEditor(graphics, screen);
         logRender(screen, regions.size(), renderedRegions, currentDimension);
     }
 
@@ -77,12 +83,17 @@ public final class XaeroMapOverlayRenderer {
                 screenClass, cachedRegions, renderedRegions, currentDimension);
     }
 
-    private static void drawPolygon(GuiGraphics graphics, Screen screen, Region region) {
+    private static List<Vector2f> project(List<RegionPoint> points, Screen screen) {
+        return points.stream()
+                .map(point -> PROJECTION.project(screen, point))
+                .toList();
+    }
+
+    private static void drawPolygon(GuiGraphics graphics, List<Vector2f> projected, int color) {
         Matrix4f matrix = graphics.pose().last().pose();
         Tesselator tesselator = Tesselator.getInstance();
         BufferBuilder buffer = tesselator.getBuilder();
 
-        int color = region.color().value();
         float alpha = ((color >>> 24) & 0xFF) / 255.0F;
         float red = ((color >>> 16) & 0xFF) / 255.0F;
         float green = ((color >>> 8) & 0xFF) / 255.0F;
@@ -94,9 +105,8 @@ public final class XaeroMapOverlayRenderer {
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
         try {
             buffer.begin(VertexFormat.Mode.TRIANGLE_FAN, DefaultVertexFormat.POSITION_COLOR);
-            for (var point : region.points()) {
-                Vector2f projected = PROJECTION.project(screen, point);
-                buffer.vertex(matrix, projected.x(), projected.y(), 0.0F).color(red, green, blue, alpha).endVertex();
+            for (var point : projected) {
+                buffer.vertex(matrix, point.x(), point.y(), 0.0F).color(red, green, blue, alpha).endVertex();
             }
             tesselator.end();
         } finally {

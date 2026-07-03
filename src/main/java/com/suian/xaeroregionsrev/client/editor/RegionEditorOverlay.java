@@ -1,10 +1,17 @@
 package com.suian.xaeroregionsrev.client.editor;
 
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import com.suian.xaeroregionsrev.region.Region;
 import com.suian.xaeroregionsrev.region.RegionPoint;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
+import org.joml.Matrix4f;
 import org.joml.Vector2f;
 
 import java.util.List;
@@ -64,6 +71,27 @@ public final class RegionEditorOverlay {
         return new ScreenPoint((minX + maxX) / 2.0F, (minY + maxY) / 2.0F);
     }
 
+    public static boolean shouldRenderDraftFill(List<ScreenPoint> points) {
+        return points.size() >= 3;
+    }
+
+    public static boolean isProjectedBoundsVisible(List<ScreenPoint> points, int screenWidth, int screenHeight) {
+        if (points.isEmpty()) {
+            return false;
+        }
+        float minX = Float.MAX_VALUE;
+        float minY = Float.MAX_VALUE;
+        float maxX = -Float.MAX_VALUE;
+        float maxY = -Float.MAX_VALUE;
+        for (ScreenPoint point : points) {
+            minX = Math.min(minX, point.x());
+            minY = Math.min(minY, point.y());
+            maxX = Math.max(maxX, point.x());
+            maxY = Math.max(maxY, point.y());
+        }
+        return maxX >= 0 && maxY >= 0 && minX <= screenWidth && minY <= screenHeight;
+    }
+
     public static void renderButton(GuiGraphics graphics, int screenWidth, int screenHeight, boolean editing) {
         Rect bounds = editButtonBounds(screenWidth, screenHeight);
         int fill = editing ? 0xCC2F855A : 0xCC1A365D;
@@ -76,6 +104,11 @@ public final class RegionEditorOverlay {
     public static void renderDraft(GuiGraphics graphics, List<Vector2f> points) {
         if (points.isEmpty()) {
             return;
+        }
+        if (shouldRenderDraftFill(points.stream()
+                .map(point -> new ScreenPoint(point.x(), point.y()))
+                .toList())) {
+            drawFilledPolygon(graphics, points, 0x44E2B93B);
         }
         for (Vector2f point : points) {
             int x = Math.round(point.x());
@@ -97,6 +130,31 @@ public final class RegionEditorOverlay {
             int x = Math.round(from.x() + (to.x() - from.x()) * t);
             int y = Math.round(from.y() + (to.y() - from.y()) * t);
             graphics.fill(x, y, x + 1, y + 1, color);
+        }
+    }
+
+    private static void drawFilledPolygon(GuiGraphics graphics, List<Vector2f> points, int color) {
+        Matrix4f matrix = graphics.pose().last().pose();
+        Tesselator tesselator = Tesselator.getInstance();
+        BufferBuilder buffer = tesselator.getBuilder();
+        float alpha = ((color >>> 24) & 0xFF) / 255.0F;
+        float red = ((color >>> 16) & 0xFF) / 255.0F;
+        float green = ((color >>> 8) & 0xFF) / 255.0F;
+        float blue = (color & 0xFF) / 255.0F;
+
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.disableDepthTest();
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+        try {
+            buffer.begin(VertexFormat.Mode.TRIANGLE_FAN, DefaultVertexFormat.POSITION_COLOR);
+            for (Vector2f point : points) {
+                buffer.vertex(matrix, point.x(), point.y(), 0.0F).color(red, green, blue, alpha).endVertex();
+            }
+            tesselator.end();
+        } finally {
+            RenderSystem.enableDepthTest();
+            RenderSystem.disableBlend();
         }
     }
 

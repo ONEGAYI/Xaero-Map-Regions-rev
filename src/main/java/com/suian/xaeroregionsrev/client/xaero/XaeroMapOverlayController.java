@@ -35,6 +35,11 @@ public final class XaeroMapOverlayController {
         return SESSION;
     }
 
+    public static void reset() {
+        SESSION.reset();
+        contextMenu = null;
+    }
+
     public static XaeroMapInputRouter.Result handleKey(XaeroMapInputRouter.KeyAction action, Screen screen) {
         XaeroMapInputRouter.Result result = ROUTER.handleKey(action);
         if (result == XaeroMapInputRouter.Result.OPEN_MANAGER) {
@@ -75,15 +80,12 @@ public final class XaeroMapOverlayController {
         return action != RegionEditorOverlay.Action.IGNORED;
     }
 
-    public static void render(GuiGraphics graphics, Screen screen, List<Region> regions, String dimension) {
-        for (Region region : regions) {
-            if (region.points().size() < 3 || !region.dimension().equals(dimension)) {
-                continue;
-            }
-            List<Vector2f> projected = project(region.points(), screen);
-            renderSelectedOutline(graphics, region, projected);
-            renderLabel(graphics, screen, region, projected);
-        }
+    public static void renderRegionDecorations(GuiGraphics graphics, Screen screen, Region region, List<Vector2f> projected) {
+        renderSelectedOutline(graphics, region, projected);
+        renderLabel(graphics, screen, region, projected);
+    }
+
+    public static void renderEditor(GuiGraphics graphics, Screen screen) {
         if (SESSION.isEditing()) {
             RegionEditorOverlay.renderDraft(graphics, project(SESSION.draftPoints(), screen));
         }
@@ -124,6 +126,12 @@ public final class XaeroMapOverlayController {
         );
     }
 
+    public static boolean isProjectedRegionVisible(List<Vector2f> projected, int screenWidth, int screenHeight) {
+        return RegionEditorOverlay.isProjectedBoundsVisible(projected.stream()
+                .map(point -> new RegionEditorOverlay.ScreenPoint(point.x(), point.y()))
+                .toList(), screenWidth, screenHeight);
+    }
+
     private static List<Vector2f> project(List<RegionPoint> points, Screen screen) {
         List<Vector2f> projected = new ArrayList<>(points.size());
         for (RegionPoint point : points) {
@@ -159,6 +167,6 @@ public final class XaeroMapOverlayController {
                     Component.literal(region.label())));
             return;
         }
-        Minecraft.getInstance().setScreen(RegionStyleEditScreen.edit(previous, region));
+        Minecraft.getInstance().setScreen(RegionStyleEditScreen.edit(previous, region, command));
     }
 }
