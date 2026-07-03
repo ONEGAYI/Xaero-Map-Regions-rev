@@ -16,6 +16,16 @@
 - 本地烟测使用 `./gradlew clean test build` 和 `./gradlew runClient`。ForgeGradle `runClient` 开发烟测通过 `clientRuntimeMods` 配置自动加载 Xaero World Map 与 IMBlocker，并启用 mixin refmap 重映射，避免将发布版 raw jar 直接放入 `run/mods/`。`run/` 与 `libs/runtime/` 均不进入 Git。
 - 使用 Computer Use 进入游戏后如遇到按键无反应，优先手动切换输入法到英文；IMBlocker 是首选输入法冲突解决方案，非输入框场景应由 IMBlocker 忽略中文输入法。
 
+## 常用命令
+
+PowerShell 环境优先使用 `.\gradlew.bat`；Git Bash、Linux 或 macOS 环境可将前缀替换为 `./gradlew`。
+
+- `.\gradlew.bat test`：运行纯 Java 契约测试。
+- `.\gradlew.bat clean test build`：完整清理、测试与构建烟测。
+- `.\gradlew.bat runClient`：启动 Forge 开发客户端；会通过 `clientRuntimeMods` 自动下载并加载 Xaero World Map 与 IMBlocker。
+- `.\gradlew.bat --refresh-dependencies test`：依赖缓存异常或远端依赖更新后刷新依赖并跑测试。
+- `git diff --check`：提交前检查空白与补丁格式问题。
+
 ## 文档与提交
 
 - 设计、计划、CHANGELOG、提交信息和 PR 描述默认使用中文。

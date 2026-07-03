@@ -102,7 +102,9 @@ public final class XaeroMapOverlayRenderer {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableDepthTest();
+        RenderSystem.disableCull();
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         try {
             buffer.begin(VertexFormat.Mode.TRIANGLE_FAN, DefaultVertexFormat.POSITION_COLOR);
             for (var point : projected) {
@@ -110,6 +112,8 @@ public final class XaeroMapOverlayRenderer {
             }
             tesselator.end();
         } finally {
+            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+            RenderSystem.enableCull();
             RenderSystem.enableDepthTest();
             RenderSystem.disableBlend();
         }
