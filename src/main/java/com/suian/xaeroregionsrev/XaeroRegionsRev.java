@@ -32,7 +32,7 @@ public final class XaeroRegionsRev {
         MinecraftForge.EVENT_BUS.register(this);
         DistExecutor.unsafeRunWhenOn(
                 Dist.CLIENT,
-                () -> com.suian.xaeroregionsrev.client.xaero.XaeroMapOverlayRenderer::register
+                () -> com.suian.xaeroregionsrev.client.XaeroRegionsClient::register
         );
         LOGGER.info("Xaero Map Regions Rev loaded.");
     }

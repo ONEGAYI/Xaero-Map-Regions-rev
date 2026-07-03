@@ -1,0 +1,22 @@
+{
+  "key.categories.xaeroregionsrev": "Xaero 地图区域",
+  "key.xaeroregionsrev.toggle_edit_mode": "切换区域编辑模式",
+  "key.xaeroregionsrev.open_region_manager": "打开区域管理器",
+  "button.xaeroregionsrev.edit": "编辑",
+  "button.xaeroregionsrev.done": "完成",
+  "button.xaeroregionsrev.save": "保存",
+  "button.xaeroregionsrev.cancel": "取消",
+  "menu.xaeroregionsrev.delete": "删除",
+  "menu.xaeroregionsrev.fill_color": "填充颜色",
+  "menu.xaeroregionsrev.label_text": "标签文本",
+  "menu.xaeroregionsrev.label_color": "标签颜色",
+  "screen.xaeroregionsrev.create_region": "创建区域",
+  "screen.xaeroregionsrev.edit_region": "编辑区域样式",
+  "screen.xaeroregionsrev.region_manager": "区域管理器",
+  "screen.xaeroregionsrev.no_regions": "当前维度没有区域",
+  "screen.xaeroregionsrev.confirm_delete": "删除区域？",
+  "field.xaeroregionsrev.name": "名称",
+  "field.xaeroregionsrev.label": "标签",
+  "field.xaeroregionsrev.fill_color": "填充颜色",
+  "field.xaeroregionsrev.label_color": "标签颜色"
+}

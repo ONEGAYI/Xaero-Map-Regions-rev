@@ -46,7 +46,7 @@
 │               地图标注、可改快捷键和地图内编辑设计文档。
 ├── src/main/java/com/suian/xaeroregionsrev/
 │   ├── client/
-│   │   客户端区域缓存与 Xaero World Map 覆盖层渲染适配。
+│   │   客户端区域缓存、可改快捷键、地图内编辑状态与 Xaero World Map 覆盖层交互适配。
 │   ├── command/
 │   │   `/region` 服务端命令入口与权限校验。
 │   ├── data/
@@ -60,7 +60,7 @@
 │   └── service/
 │       区域读写服务层。
 ├── src/main/resources/
-│   Forge 模组元数据与资源包描述。
+│   Forge 模组元数据、资源包描述与中英文客户端文本资源。
 └── src/test/java/com/suian/xaeroregionsrev/
-    纯 Java 契约测试，覆盖区域模型、编解码、网络包和 Xaero 屏幕识别。
+    纯 Java 契约测试，覆盖区域模型、编解码、网络包、Xaero 屏幕识别与地图编辑状态机。
 ```

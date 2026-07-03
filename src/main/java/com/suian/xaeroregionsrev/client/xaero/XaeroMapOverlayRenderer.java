@@ -57,6 +57,7 @@ public final class XaeroMapOverlayRenderer {
             drawPolygon(graphics, screen, region);
             renderedRegions++;
         }
+        XaeroMapOverlayController.render(graphics, screen, regions, currentDimension);
         logRender(screen, regions.size(), renderedRegions, currentDimension);
     }
 

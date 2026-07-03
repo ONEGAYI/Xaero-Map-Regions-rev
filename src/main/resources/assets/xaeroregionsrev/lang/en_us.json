@@ -1,0 +1,22 @@
+{
+  "key.categories.xaeroregionsrev": "Xaero Map Regions Rev",
+  "key.xaeroregionsrev.toggle_edit_mode": "Toggle Region Edit Mode",
+  "key.xaeroregionsrev.open_region_manager": "Open Region Manager",
+  "button.xaeroregionsrev.edit": "Edit",
+  "button.xaeroregionsrev.done": "Done",
+  "button.xaeroregionsrev.save": "Save",
+  "button.xaeroregionsrev.cancel": "Cancel",
+  "menu.xaeroregionsrev.delete": "Delete",
+  "menu.xaeroregionsrev.fill_color": "Fill Color",
+  "menu.xaeroregionsrev.label_text": "Label Text",
+  "menu.xaeroregionsrev.label_color": "Label Color",
+  "screen.xaeroregionsrev.create_region": "Create Region",
+  "screen.xaeroregionsrev.edit_region": "Edit Region Style",
+  "screen.xaeroregionsrev.region_manager": "Region Manager",
+  "screen.xaeroregionsrev.no_regions": "No regions in this dimension",
+  "screen.xaeroregionsrev.confirm_delete": "Delete region?",
+  "field.xaeroregionsrev.name": "Name",
+  "field.xaeroregionsrev.label": "Label",
+  "field.xaeroregionsrev.fill_color": "Fill Color",
+  "field.xaeroregionsrev.label_color": "Label Color"
+}
