@@ -3,6 +3,7 @@ package com.suian.xaeroregionsrev;
 import com.mojang.logging.LogUtils;
 import com.suian.xaeroregionsrev.command.RegionCommands;
 import com.suian.xaeroregionsrev.network.RegionNetwork;
+import com.suian.xaeroregionsrev.network.payload.ColorHistorySyncPacket;
 import com.suian.xaeroregionsrev.network.payload.RegionSyncPacket;
 import com.suian.xaeroregionsrev.region.Region;
 import com.suian.xaeroregionsrev.service.RegionService;
@@ -51,6 +52,8 @@ public final class XaeroRegionsRev {
                 return;
             }
             RegionNetwork.sendToPlayer(player, new RegionSyncPacket(allRegions(server)));
+            RegionNetwork.sendColorHistoryToPlayer(player,
+                    new ColorHistorySyncPacket(REGION_SERVICE.colorHistory(server)));
         }
     }
 

@@ -1,6 +1,9 @@
 package com.suian.xaeroregionsrev.client.editor;
 
 import com.suian.xaeroregionsrev.region.ArgbColor;
+import com.suian.xaeroregionsrev.client.ClientColorHistoryCache;
+import com.suian.xaeroregionsrev.network.RegionNetwork;
+import com.suian.xaeroregionsrev.network.payload.ColorHistoryUpdateRequestPacket;
 import com.suian.xaeroregionsrev.region.RegionColorParser;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractSliderButton;
@@ -18,16 +21,7 @@ public final class ColorPickerScreen extends Screen {
     private static final int CHANNEL_ROW_HEIGHT = 26;
     private static final int SWATCH_SIZE = 18;
     private static final int SWATCH_GAP = 3;
-    private static final int COLOR_HISTORY_LIMIT = 28;
-    private static List<ArgbColor> recentColors = List.of();
-    private static List<ArgbColor> favoriteColors = List.of(
-            new ArgbColor(0x66E53E3E),
-            new ArgbColor(0x6638A169),
-            new ArgbColor(0x663182CE),
-            new ArgbColor(0x66D69E2E),
-            new ArgbColor(0x66805AD5),
-            new ArgbColor(0xFFFFFFFF)
-    );
+    private static final ClientFavoriteColorStore FAVORITE_COLOR_STORE = ClientFavoriteColorStore.createDefault();
 
     private final Screen previous;
     private final Consumer<ArgbColor> onSave;
@@ -101,9 +95,9 @@ public final class ColorPickerScreen extends Screen {
         int swatchRows = swatchRows(layout);
         int recentY = layout.top() + layout.height() - 92;
         int favoriteY = layout.top() + layout.height() - 62;
-        renderSwatches(graphics, Component.translatable("field.xaeroregionsrev.recent_colors"), recentColors,
+        renderSwatches(graphics, Component.translatable("field.xaeroregionsrev.recent_colors"), ClientColorHistoryCache.colors(),
                 layout.controlsLeft(), recentY, swatchRows, false);
-        renderSwatches(graphics, Component.translatable("field.xaeroregionsrev.favorite_colors"), favoriteColors,
+        renderSwatches(graphics, Component.translatable("field.xaeroregionsrev.favorite_colors"), FAVORITE_COLOR_STORE.colors(),
                 layout.controlsLeft(), favoriteY, swatchRows, true);
         renderCurrentColor(graphics);
         super.render(graphics, mouseX, mouseY, partialTick);
@@ -117,7 +111,7 @@ public final class ColorPickerScreen extends Screen {
             }
             for (Swatch swatch : swatches) {
                 if (swatch.removable() && swatch.closeContains(mouseX, mouseY)) {
-                    favoriteColors = ColorPickerModel.releaseColor(favoriteColors, swatch.color());
+                    FAVORITE_COLOR_STORE.release(swatch.color());
                     return true;
                 }
                 if (swatch.contains(mouseX, mouseY)) {
@@ -177,12 +171,12 @@ public final class ColorPickerScreen extends Screen {
 
     private void save() {
         ArgbColor color = channels.toColor();
-        recentColors = ColorPickerModel.rememberColor(recentColors, color, COLOR_HISTORY_LIMIT);
+        RegionNetwork.CHANNEL.sendToServer(new ColorHistoryUpdateRequestPacket(color));
         onSave.accept(color);
     }
 
     private void rememberFavorite() {
-        favoriteColors = ColorPickerModel.rememberColor(favoriteColors, channels.toColor(), COLOR_HISTORY_LIMIT);
+        FAVORITE_COLOR_STORE.remember(channels.toColor());
     }
 
     private void syncControls() {

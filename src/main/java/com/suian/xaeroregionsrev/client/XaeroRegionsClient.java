@@ -47,6 +47,7 @@ public final class XaeroRegionsClient {
     private static void onClientLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
         XaeroMapOverlayController.reset();
         ClientRegionCache.clear();
+        ClientColorHistoryCache.clear();
     }
 
     static boolean shouldResetSessionOnScreenChange(boolean currentIsWorldMap, boolean newIsWorldMap,

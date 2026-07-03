@@ -2,7 +2,10 @@ package com.suian.xaeroregionsrev.network;
 
 import com.mojang.logging.LogUtils;
 import com.suian.xaeroregionsrev.XaeroRegionsRev;
+import com.suian.xaeroregionsrev.client.ClientColorHistoryCache;
 import com.suian.xaeroregionsrev.client.ClientRegionCache;
+import com.suian.xaeroregionsrev.network.payload.ColorHistorySyncPacket;
+import com.suian.xaeroregionsrev.network.payload.ColorHistoryUpdateRequestPacket;
 import com.suian.xaeroregionsrev.network.payload.CreateRegionRequestPacket;
 import com.suian.xaeroregionsrev.network.payload.DeleteRegionRequestPacket;
 import com.suian.xaeroregionsrev.network.payload.RegionRefreshRequestPacket;
@@ -20,7 +23,7 @@ import org.slf4j.Logger;
 
 public final class RegionNetwork {
     private static final Logger LOGGER = LogUtils.getLogger();
-    private static final String PROTOCOL_VERSION = "4";
+    private static final String PROTOCOL_VERSION = "5";
     public static final SimpleChannel CHANNEL = NetworkRegistry.ChannelBuilder
             .named(new ResourceLocation(XaeroRegionsRev.MOD_ID, "main"))
             .networkProtocolVersion(() -> PROTOCOL_VERSION)
@@ -49,6 +52,16 @@ public final class RegionNetwork {
                 })
                 .add();
 
+        CHANNEL.messageBuilder(ColorHistorySyncPacket.class, packetId++, NetworkDirection.PLAY_TO_CLIENT)
+                .encoder(ColorHistorySyncPacket::encode)
+                .decoder(ColorHistorySyncPacket::decode)
+                .consumerMainThread((packet, contextSupplier) -> {
+                    DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+                            () -> () -> ClientColorHistoryCache.replaceAll(packet.colors()));
+                    contextSupplier.get().setPacketHandled(true);
+                })
+                .add();
+
         CHANNEL.messageBuilder(CreateRegionRequestPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
                 .encoder(CreateRegionRequestPacket::encode)
                 .decoder(CreateRegionRequestPacket::decode)
@@ -72,6 +85,12 @@ public final class RegionNetwork {
                 .decoder(RegionRefreshRequestPacket::decode)
                 .consumerMainThread(RegionEditRequestHandler::handleRefresh)
                 .add();
+
+        CHANNEL.messageBuilder(ColorHistoryUpdateRequestPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
+                .encoder(ColorHistoryUpdateRequestPacket::encode)
+                .decoder(ColorHistoryUpdateRequestPacket::decode)
+                .consumerMainThread(RegionEditRequestHandler::handleRememberColor)
+                .add();
     }
 
     public static void sendToPlayer(ServerPlayer player, RegionSyncPacket packet) {
@@ -81,6 +100,17 @@ public final class RegionNetwork {
 
     public static void sendToAll(RegionSyncPacket packet) {
         LOGGER.info("Broadcasting {} region(s) to all players.", packet.regions().size());
+        CHANNEL.send(PacketDistributor.ALL.noArg(), packet);
+    }
+
+    public static void sendColorHistoryToPlayer(ServerPlayer player, ColorHistorySyncPacket packet) {
+        LOGGER.info("Sending {} color history item(s) to player {}.",
+                packet.colors().size(), player.getGameProfile().getName());
+        CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), packet);
+    }
+
+    public static void sendColorHistoryToAll(ColorHistorySyncPacket packet) {
+        LOGGER.info("Broadcasting {} color history item(s) to all players.", packet.colors().size());
         CHANNEL.send(PacketDistributor.ALL.noArg(), packet);
     }
 }

@@ -1,12 +1,15 @@
 package com.suian.xaeroregionsrev.network;
 
 import com.mojang.logging.LogUtils;
+import com.suian.xaeroregionsrev.network.payload.ColorHistorySyncPacket;
+import com.suian.xaeroregionsrev.network.payload.ColorHistoryUpdateRequestPacket;
 import com.suian.xaeroregionsrev.network.payload.CreateRegionRequestPacket;
 import com.suian.xaeroregionsrev.network.payload.DeleteRegionRequestPacket;
 import com.suian.xaeroregionsrev.network.payload.RegionRefreshRequestPacket;
 import com.suian.xaeroregionsrev.network.payload.RegionSyncPacket;
 import com.suian.xaeroregionsrev.network.payload.UpdateRegionStyleRequestPacket;
 import com.suian.xaeroregionsrev.platform.ForgePermissionAdapter;
+import com.suian.xaeroregionsrev.region.ColorPaletteLimits;
 import com.suian.xaeroregionsrev.region.Region;
 import com.suian.xaeroregionsrev.region.RegionId;
 import com.suian.xaeroregionsrev.region.RegionRequestValidator;
@@ -152,6 +155,28 @@ public final class RegionEditRequestHandler {
             MinecraftServer server = sender.getServer();
             if (server != null) {
                 RegionNetwork.sendToPlayer(sender, new RegionSyncPacket(SERVICE.snapshot(server)));
+                RegionNetwork.sendColorHistoryToPlayer(sender, new ColorHistorySyncPacket(SERVICE.colorHistory(server)));
+            }
+        });
+        context.setPacketHandled(true);
+    }
+
+    public static void handleRememberColor(
+            ColorHistoryUpdateRequestPacket packet,
+            Supplier<NetworkEvent.Context> contextSupplier
+    ) {
+        NetworkEvent.Context context = contextSupplier.get();
+        context.enqueueWork(() -> {
+            ServerPlayer sender = context.getSender();
+            if (!canManage(sender)) {
+                sendPermissionError(sender);
+                return;
+            }
+            MinecraftServer server = sender.getServer();
+            if (server != null) {
+                RegionNetwork.sendColorHistoryToAll(new ColorHistorySyncPacket(
+                        SERVICE.rememberColor(server, packet.color(), ColorPaletteLimits.MAX_COLORS)
+                ));
             }
         });
         context.setPacketHandled(true);

@@ -69,4 +69,17 @@ public final class RegionService {
         Objects.requireNonNull(id, "Region id cannot be null.");
         return RegionSavedData.get(level).remove(id);
     }
+
+    public List<ArgbColor> colorHistory(MinecraftServer server) {
+        Objects.requireNonNull(server, "Minecraft server cannot be null.");
+        return RegionSavedData.get(server.overworld()).colorHistory();
+    }
+
+    public List<ArgbColor> rememberColor(MinecraftServer server, ArgbColor color, int limit) {
+        Objects.requireNonNull(server, "Minecraft server cannot be null.");
+        Objects.requireNonNull(color, "Color cannot be null.");
+        RegionSavedData data = RegionSavedData.get(server.overworld());
+        data.rememberColor(color, limit);
+        return data.colorHistory();
+    }
 }
