@@ -25,6 +25,8 @@ public final class RegionNbtCodec {
         tag.putString("name", region.name());
         tag.putString("dimension", region.dimension());
         tag.putInt("color", region.color().value());
+        tag.putString("label", region.label());
+        tag.putInt("labelColor", region.labelColor().value());
         tag.putString("category", region.category());
         tag.putString("iconName", region.iconName());
         tag.putLong("createdAt", region.createdAt());
@@ -70,6 +72,8 @@ public final class RegionNbtCodec {
                 tag.getString("name"),
                 tag.getString("dimension"),
                 new ArgbColor(tag.getInt("color")),
+                tag.contains("label", TAG_STRING) ? tag.getString("label") : tag.getString("name"),
+                tag.contains("labelColor", TAG_INT) ? new ArgbColor(tag.getInt("labelColor")) : new ArgbColor(0xFFFFFFFF),
                 tag.getString("category"),
                 tag.getString("iconName"),
                 points,

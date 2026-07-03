@@ -21,6 +21,8 @@ class RegionSyncPacketTest {
                 "Spawn",
                 "minecraft:overworld",
                 new ArgbColor(0x8800FF00),
+                "Spawn Label",
+                new ArgbColor(0xFFFFAA00),
                 "town",
                 "home",
                 List.of(new RegionPoint(0, 0), new RegionPoint(16, 0), new RegionPoint(16, 16)),
@@ -34,6 +36,8 @@ class RegionSyncPacketTest {
         var decoded = RegionSyncPacket.decode(buffer);
 
         assertEquals(packet.regions(), decoded.regions());
+        assertEquals("Spawn Label", decoded.regions().get(0).label());
+        assertEquals(0xFFFFAA00, decoded.regions().get(0).labelColor().value());
     }
 
     @Test
@@ -69,6 +73,18 @@ class RegionSyncPacketTest {
     }
 
     @Test
+    void decodeRejectsTooManyPoints() {
+        var buffer = new FriendlyByteBuf(Unpooled.buffer());
+        buffer.writeVarInt(1);
+        writeRegionHeader(buffer);
+        buffer.writeVarInt(1025);
+
+        var exception = assertThrows(IllegalArgumentException.class, () -> RegionSyncPacket.decode(buffer));
+
+        assertEquals("Region point count must be between 0 and 1024.", exception.getMessage());
+    }
+
+    @Test
     void decodeRejectsTooFewPoints() {
         var buffer = new FriendlyByteBuf(Unpooled.buffer());
         buffer.writeVarInt(1);
@@ -87,6 +103,8 @@ class RegionSyncPacketTest {
         buffer.writeUtf("Spawn");
         buffer.writeUtf("minecraft:overworld");
         buffer.writeInt(0x8800FF00);
+        buffer.writeUtf("Spawn Label");
+        buffer.writeInt(0xFFFFAA00);
         buffer.writeUtf("town");
         buffer.writeUtf("home");
         buffer.writeLong(100L);

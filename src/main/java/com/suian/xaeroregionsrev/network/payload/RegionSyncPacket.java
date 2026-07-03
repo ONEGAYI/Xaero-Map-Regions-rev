@@ -25,6 +25,8 @@ public record RegionSyncPacket(List<Region> regions) {
             buffer.writeUtf(region.name());
             buffer.writeUtf(region.dimension());
             buffer.writeInt(region.color().value());
+            buffer.writeUtf(region.label());
+            buffer.writeInt(region.labelColor().value());
             buffer.writeUtf(region.category());
             buffer.writeUtf(region.iconName());
             buffer.writeLong(region.createdAt());
@@ -45,6 +47,8 @@ public record RegionSyncPacket(List<Region> regions) {
             String name = buffer.readUtf();
             String dimension = buffer.readUtf();
             ArgbColor color = new ArgbColor(buffer.readInt());
+            String label = buffer.readUtf();
+            ArgbColor labelColor = new ArgbColor(buffer.readInt());
             String category = buffer.readUtf();
             String iconName = buffer.readUtf();
             long createdAt = buffer.readLong();
@@ -57,7 +61,7 @@ public record RegionSyncPacket(List<Region> regions) {
             if (pointCount < 3 || !PolygonMath.isValidPolygon(points)) {
                 throw new IllegalArgumentException("Region points must form a valid polygon.");
             }
-            regions.add(new Region(id, name, dimension, color, category, iconName, points, createdAt, updatedAt));
+            regions.add(new Region(id, name, dimension, color, label, labelColor, category, iconName, points, createdAt, updatedAt));
         }
         return new RegionSyncPacket(regions);
     }

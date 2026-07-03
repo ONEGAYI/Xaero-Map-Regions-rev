@@ -6,9 +6,9 @@ import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.suian.xaeroregionsrev.network.RegionNetwork;
 import com.suian.xaeroregionsrev.network.payload.RegionSyncPacket;
 import com.suian.xaeroregionsrev.platform.ForgePermissionAdapter;
-import com.suian.xaeroregionsrev.region.ArgbColor;
 import com.suian.xaeroregionsrev.region.PointMarker;
 import com.suian.xaeroregionsrev.region.Region;
+import com.suian.xaeroregionsrev.region.RegionColorParser;
 import com.suian.xaeroregionsrev.region.RegionId;
 import com.suian.xaeroregionsrev.region.RegionPoint;
 import com.suian.xaeroregionsrev.service.RegionService;
@@ -101,7 +101,7 @@ public final class RegionCommands {
                     new RegionId(name),
                     name,
                     level.dimension().location().toString(),
-                    parseArgb(argb),
+                    RegionColorParser.parse(argb),
                     "default",
                     "default",
                     parsePoints(pointsText),
@@ -133,28 +133,6 @@ public final class RegionCommands {
         }
         source.sendSuccess(() -> Component.literal("Created point marker " + marker.label() + " for " + playerName), true);
         return 1;
-    }
-
-    private static ArgbColor parseArgb(String text) throws CommandSyntaxException {
-        String valueText = text.trim();
-        if (valueText.startsWith("0x") || valueText.startsWith("0X")) {
-            valueText = valueText.substring(2);
-        } else if (valueText.startsWith("#")) {
-            valueText = valueText.substring(1);
-        }
-        if (valueText.isEmpty() || valueText.length() > 8) {
-            throw commandError("Color must contain 1 to 8 hexadecimal digits.");
-        }
-        for (int i = 0; i < valueText.length(); i++) {
-            if (Character.digit(valueText.charAt(i), 16) < 0) {
-                throw commandError("Color must contain only hexadecimal digits.");
-            }
-        }
-        long value = Long.parseUnsignedLong(valueText, 16);
-        if (value < 0L || value > 0xFFFFFFFFL) {
-            throw commandError("Color must be between 0x00000000 and 0xFFFFFFFF.");
-        }
-        return new ArgbColor((int) value);
     }
 
     private static List<RegionPoint> parsePoints(String text) throws CommandSyntaxException {

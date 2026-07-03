@@ -26,6 +26,76 @@ class RegionTest {
     }
 
     @Test
+    void labelAndLabelColorAreReadableWhenProvided() {
+        var region = new Region(
+                new RegionId("spawn"),
+                "Spawn",
+                "minecraft:overworld",
+                new ArgbColor(0x8000FF00),
+                "Spawn Label",
+                new ArgbColor(0xFFFFAA00),
+                "default",
+                "home",
+                List.of(new RegionPoint(0, 0), new RegionPoint(16, 0), new RegionPoint(16, 16)),
+                1L,
+                2L
+        );
+
+        assertEquals("Spawn Label", region.label());
+        assertEquals(0xFFFFAA00, region.labelColor().value());
+    }
+
+    @Test
+    void legacyConstructorDefaultsLabelToNameAndWhiteLabelColor() {
+        var region = new Region(
+                new RegionId("spawn"),
+                "Spawn",
+                "minecraft:overworld",
+                new ArgbColor(0x8000FF00),
+                "default",
+                "home",
+                List.of(new RegionPoint(0, 0), new RegionPoint(16, 0), new RegionPoint(16, 16)),
+                1L,
+                2L
+        );
+
+        assertEquals("Spawn", region.label());
+        assertEquals(0xFFFFFFFF, region.labelColor().value());
+    }
+
+    @Test
+    void blankLabelAndNullLabelColorAreRejected() {
+        assertAll(
+                () -> assertThrows(IllegalArgumentException.class, () -> new Region(
+                        new RegionId("spawn"),
+                        "Spawn",
+                        "minecraft:overworld",
+                        new ArgbColor(0x8000FF00),
+                        " ",
+                        new ArgbColor(0xFFFFFFFF),
+                        "default",
+                        "home",
+                        List.of(new RegionPoint(0, 0), new RegionPoint(16, 0), new RegionPoint(16, 16)),
+                        1L,
+                        2L
+                )),
+                () -> assertThrows(IllegalArgumentException.class, () -> new Region(
+                        new RegionId("spawn"),
+                        "Spawn",
+                        "minecraft:overworld",
+                        new ArgbColor(0x8000FF00),
+                        "Spawn",
+                        null,
+                        "default",
+                        "home",
+                        List.of(new RegionPoint(0, 0), new RegionPoint(16, 0), new RegionPoint(16, 16)),
+                        1L,
+                        2L
+                ))
+        );
+    }
+
+    @Test
     void blankRegionIdIsRejected() {
         assertThrows(IllegalArgumentException.class, () -> new RegionId(" "));
     }

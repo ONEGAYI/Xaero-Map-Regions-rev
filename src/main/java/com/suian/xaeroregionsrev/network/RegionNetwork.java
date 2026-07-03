@@ -16,7 +16,7 @@ import org.slf4j.Logger;
 
 public final class RegionNetwork {
     private static final Logger LOGGER = LogUtils.getLogger();
-    private static final String PROTOCOL_VERSION = "1";
+    private static final String PROTOCOL_VERSION = "2";
     public static final SimpleChannel CHANNEL = NetworkRegistry.ChannelBuilder
             .named(new ResourceLocation(XaeroRegionsRev.MOD_ID, "main"))
             .networkProtocolVersion(() -> PROTOCOL_VERSION)

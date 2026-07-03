@@ -16,6 +16,8 @@ class RegionNbtCodecTest {
                 "Spawn",
                 "minecraft:overworld",
                 new ArgbColor(0x8800FF00),
+                "Spawn Label",
+                new ArgbColor(0xFFFFAA00),
                 "town",
                 "home",
                 List.of(new RegionPoint(0, 0), new RegionPoint(16, 0), new RegionPoint(16, 16)),
@@ -27,6 +29,36 @@ class RegionNbtCodecTest {
         var decoded = RegionNbtCodec.readRegion(tag);
 
         assertEquals(original, decoded);
+    }
+
+    @Test
+    void writeRegionIncludesLabelAndLabelColor() {
+        var tag = validRegionTag();
+
+        assertEquals("Spawn Label", tag.getString("label"));
+        assertEquals(0xFFFFAA00, tag.getInt("labelColor"));
+    }
+
+    @Test
+    void readRegionDefaultsMissingLabelToNameForLegacyData() {
+        CompoundTag tag = validRegionTag();
+        tag.remove("label");
+
+        Region decoded = RegionNbtCodec.readRegion(tag);
+
+        assertEquals("Spawn", decoded.label());
+        assertEquals(0xFFFFAA00, decoded.labelColor().value());
+    }
+
+    @Test
+    void readRegionDefaultsMissingLabelColorToWhiteForLegacyData() {
+        CompoundTag tag = validRegionTag();
+        tag.remove("labelColor");
+
+        Region decoded = RegionNbtCodec.readRegion(tag);
+
+        assertEquals("Spawn Label", decoded.label());
+        assertEquals(0xFFFFFFFF, decoded.labelColor().value());
     }
 
     @Test
@@ -71,6 +103,8 @@ class RegionNbtCodecTest {
                 "Spawn",
                 "minecraft:overworld",
                 new ArgbColor(0x8800FF00),
+                "Spawn Label",
+                new ArgbColor(0xFFFFAA00),
                 "town",
                 "home",
                 List.of(new RegionPoint(0, 0), new RegionPoint(16, 0), new RegionPoint(16, 16)),
