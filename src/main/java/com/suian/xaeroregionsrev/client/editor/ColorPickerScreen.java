@@ -68,7 +68,8 @@ public final class ColorPickerScreen extends Screen {
         addRenderableWidget(blueSlider);
         addRenderableWidget(alphaSlider);
 
-        int buttonY = layout.top() + layout.height() - 28;
+        ColorPickerModel.PaletteLayout palette = paletteLayout(layout);
+        int buttonY = palette.buttonY();
         addRenderableWidget(Button.builder(Component.translatable("button.xaeroregionsrev.save"), button -> save())
                 .bounds(layout.left() + layout.width() - 232, buttonY, 68, 20)
                 .build());
@@ -92,13 +93,11 @@ public final class ColorPickerScreen extends Screen {
         renderColorPlate(graphics);
         renderChannelLabels(graphics);
         swatches.clear();
-        int swatchRows = swatchRows(layout);
-        int recentY = layout.top() + layout.height() - 92;
-        int favoriteY = layout.top() + layout.height() - 62;
+        ColorPickerModel.PaletteLayout palette = paletteLayout(layout);
         renderSwatches(graphics, Component.translatable("field.xaeroregionsrev.recent_colors"), ClientColorHistoryCache.colors(),
-                layout.controlsLeft(), recentY, swatchRows, false);
+                layout.controlsLeft(), palette.recentY(), palette.rows(), false);
         renderSwatches(graphics, Component.translatable("field.xaeroregionsrev.favorite_colors"), FAVORITE_COLOR_STORE.colors(),
-                layout.controlsLeft(), favoriteY, swatchRows, true);
+                layout.controlsLeft(), palette.favoriteY(), palette.rows(), true);
         renderCurrentColor(graphics);
         super.render(graphics, mouseX, mouseY, partialTick);
     }
@@ -280,8 +279,8 @@ public final class ColorPickerScreen extends Screen {
         return Math.max(4, availableWidth / (SWATCH_SIZE + SWATCH_GAP));
     }
 
-    private int swatchRows(ColorPickerModel.Layout layout) {
-        return layout.height() < 280 ? 1 : 2;
+    private ColorPickerModel.PaletteLayout paletteLayout(ColorPickerModel.Layout layout) {
+        return ColorPickerModel.paletteLayout(layout, SWATCH_SIZE, SWATCH_GAP);
     }
 
     private void drawWheelMarker(GuiGraphics graphics, int centerX, int centerY) {

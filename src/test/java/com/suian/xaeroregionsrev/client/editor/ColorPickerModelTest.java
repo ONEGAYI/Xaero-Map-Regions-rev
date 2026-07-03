@@ -83,6 +83,23 @@ class ColorPickerModelTest {
     }
 
     @Test
+    void pickerLayoutUsesTallerPanelOnHighResolutionScreens() {
+        ColorPickerModel.Layout layout = ColorPickerModel.layout(2048, 1152);
+
+        assertTrue(layout.height() >= 400);
+    }
+
+    @Test
+    void pickerPaletteRowsDoNotOverlapActionButtons() {
+        ColorPickerModel.Layout layout = ColorPickerModel.layout(2048, 1152);
+        ColorPickerModel.PaletteLayout palette = ColorPickerModel.paletteLayout(layout, 18, 3);
+        int favoriteSwatchesBottom = palette.favoriteY() + palette.rows() * (18 + 3) - 3;
+
+        assertTrue(palette.recentY() < palette.favoriteY());
+        assertTrue(favoriteSwatchesBottom + 10 <= palette.buttonY());
+    }
+
+    @Test
     void wheelCenterIsWhiteAndRightEdgeIsRed() {
         Optional<ArgbColor> center = ColorPickerModel.colorAtWheel(0.0D, 0.0D, 128);
         Optional<ArgbColor> rightEdge = ColorPickerModel.colorAtWheel(1.0D, 0.0D, 128);

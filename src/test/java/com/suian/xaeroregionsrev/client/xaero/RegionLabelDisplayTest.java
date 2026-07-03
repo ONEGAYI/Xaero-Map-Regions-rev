@@ -36,6 +36,18 @@ class RegionLabelDisplayTest {
     }
 
     @Test
+    void showsLabelForReadableProjectedRegionOnHighResolutionScreens() {
+        List<RegionEditorOverlay.ScreenPoint> points = List.of(
+                new RegionEditorOverlay.ScreenPoint(900, 480),
+                new RegionEditorOverlay.ScreenPoint(996, 480),
+                new RegionEditorOverlay.ScreenPoint(996, 576),
+                new RegionEditorOverlay.ScreenPoint(900, 576)
+        );
+
+        assertTrue(RegionLabelDisplay.shouldRenderInlineLabel(points, 2048, 1152));
+    }
+
+    @Test
     void truncatesLongLabels() {
         assertEquals("Old Growth Birch...", RegionLabelDisplay.truncate("Old Growth Birch Forest", 16));
         assertEquals("Spawn", RegionLabelDisplay.truncate("Spawn", 16));

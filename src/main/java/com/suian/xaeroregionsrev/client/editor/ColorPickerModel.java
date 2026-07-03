@@ -8,8 +8,8 @@ import java.util.Optional;
 
 public final class ColorPickerModel {
     private static final int SCREEN_MARGIN = 8;
-    private static final int MAX_PANEL_WIDTH = 760;
-    private static final int MAX_PANEL_HEIGHT = 320;
+    private static final int MAX_PANEL_WIDTH = 900;
+    private static final int MAX_PANEL_HEIGHT = 420;
     private static final int MIN_PANEL_WIDTH = 360;
     private static final int MIN_PANEL_HEIGHT = 220;
     private static final int CONTROL_COLUMN_MIN_WIDTH = 170;
@@ -109,6 +109,15 @@ public final class ColorPickerModel {
                 inputX, sliderX, sliderWidth);
     }
 
+    public static PaletteLayout paletteLayout(Layout layout, int swatchSize, int swatchGap) {
+        int rows = layout.height() < 340 ? 1 : 2;
+        int swatchBlockHeight = rows * (swatchSize + swatchGap) - swatchGap;
+        int buttonY = layout.top() + layout.height() - 28;
+        int favoriteY = buttonY - swatchBlockHeight - 14;
+        int recentY = favoriteY - swatchBlockHeight - 16;
+        return new PaletteLayout(recentY, favoriteY, rows, buttonY);
+    }
+
     public static Optional<ArgbColor> colorAtWheel(double normalizedX, double normalizedY, int alpha) {
         double saturation = Math.sqrt(normalizedX * normalizedX + normalizedY * normalizedY);
         if (saturation > 1.0D) {
@@ -181,6 +190,9 @@ public final class ColorPickerModel {
 
     public record Layout(int left, int top, int width, int height, int plateLeft, int plateTop, int plateDiameter,
                          int controlsLeft, int inputX, int sliderX, int sliderWidth) {
+    }
+
+    public record PaletteLayout(int recentY, int favoriteY, int rows, int buttonY) {
     }
 
     public record WheelPosition(double x, double y) {

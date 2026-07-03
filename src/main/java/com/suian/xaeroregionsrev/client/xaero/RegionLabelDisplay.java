@@ -6,6 +6,7 @@ import java.util.List;
 
 public final class RegionLabelDisplay {
     private static final double INLINE_AREA_RATIO_THRESHOLD = 0.015D;
+    private static final double INLINE_ABSOLUTE_AREA_THRESHOLD = 8_000.0D;
 
     private RegionLabelDisplay() {
     }
@@ -16,7 +17,9 @@ public final class RegionLabelDisplay {
             return false;
         }
         double screenArea = (double) screenWidth * screenHeight;
-        return polygonArea(points) / screenArea >= INLINE_AREA_RATIO_THRESHOLD;
+        double projectedArea = polygonArea(points);
+        return projectedArea >= INLINE_ABSOLUTE_AREA_THRESHOLD
+                || projectedArea / screenArea >= INLINE_AREA_RATIO_THRESHOLD;
     }
 
     public static boolean isHovered(List<RegionEditorOverlay.ScreenPoint> points, double mouseX, double mouseY) {
