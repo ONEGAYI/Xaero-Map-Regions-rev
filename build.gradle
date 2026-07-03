@@ -80,7 +80,7 @@ repositories {
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
-    clientRuntimeMods fg.deobf('maven.modrinth:xaeros-world-map:forge-1.20.1-1.41.2')
+    clientRuntimeMods fg.deobf("maven.modrinth:xaeros-world-map:${artifact_loader}-${minecraft_version}-${xaero_world_map_runtime_version}")
     clientRuntimeMods fg.deobf('curse.maven:imblocker-483760:4626679')
 
     testImplementation platform('org.junit:junit-bom:5.10.2')
@@ -103,6 +103,7 @@ tasks.named('processResources', ProcessResources).configure {
             forge_version          : forge_version,
             forge_version_range    : forge_version_range,
             loader_version_range   : loader_version_range,
+            xaero_world_map_version_range: xaero_world_map_version_range,
             mod_id                 : mod_id,
             mod_name               : mod_name,
             mod_license            : mod_license,
@@ -130,4 +131,67 @@ tasks.named('jar', Jar).configure {
         ])
     }
     finalizedBy 'reobfJar'
+}
+
+tasks.register('bump') {
+    group = 'versioning'
+    description = 'Bump mod_version in gradle.properties. Usage: bump "-PVERSION=0.1.1", bump -PBUMP=patch, or bump -Ppatch/-Pminor/-Pmajor.'
+
+    doLast {
+        File propertiesFile = file('gradle.properties')
+        List<String> lines = propertiesFile.readLines('UTF-8')
+        String currentVersion = lines.find { it.startsWith('mod_version=') }?.substring('mod_version='.length())
+        if (currentVersion == null || currentVersion.isBlank()) {
+            throw new GradleException('Cannot find mod_version in gradle.properties.')
+        }
+
+        List<String> flagModes = ['major', 'minor', 'patch'].findAll { project.hasProperty(it) }
+        String bumpMode = project.findProperty('BUMP') as String
+        if (bumpMode != null && !['major', 'minor', 'patch'].contains(bumpMode)) {
+            throw new GradleException("Unsupported bump mode '${bumpMode}'. Use patch, minor, or major.")
+        }
+        if (bumpMode != null) {
+            flagModes.add(bumpMode)
+        }
+        flagModes = flagModes.unique()
+
+        String explicitVersion = project.findProperty('VERSION') as String
+        if (explicitVersion != null && !flagModes.isEmpty()) {
+            throw new GradleException('Use either -PVERSION=<version> or one of -Ppatch/-Pminor/-Pmajor, not both.')
+        }
+        if (explicitVersion == null && flagModes.size() != 1) {
+            throw new GradleException('Specify exactly one version target: -PVERSION=<version>, -Ppatch, -Pminor, or -Pmajor.')
+        }
+
+        String nextVersion = explicitVersion ?: bumpedVersion(currentVersion, flagModes.first())
+        if (!(nextVersion ==~ /\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?/)) {
+            throw new GradleException("Invalid VERSION '${nextVersion}'. Expected semantic version like 0.1.1.")
+        }
+
+        List<String> updatedLines = lines.collect { line ->
+            line.startsWith('mod_version=') ? "mod_version=${nextVersion}" : line
+        }
+        propertiesFile.write(updatedLines.join(System.lineSeparator()) + System.lineSeparator(), 'UTF-8')
+        logger.lifecycle("Bumped mod_version: ${currentVersion} -> ${nextVersion}")
+    }
+}
+
+String bumpedVersion(String currentVersion, String bumpMode) {
+    def matcher = currentVersion =~ /^(\d+)\.(\d+)\.(\d+)(?:-[0-9A-Za-z.-]+)?$/
+    if (!matcher.matches()) {
+        throw new GradleException("Cannot ${bumpMode}-bump non-semver mod_version '${currentVersion}'.")
+    }
+    int major = matcher.group(1) as int
+    int minor = matcher.group(2) as int
+    int patch = matcher.group(3) as int
+    switch (bumpMode) {
+        case 'major':
+            return "${major + 1}.0.0"
+        case 'minor':
+            return "${major}.${minor + 1}.0"
+        case 'patch':
+            return "${major}.${minor}.${patch + 1}"
+        default:
+            throw new GradleException("Unsupported bump mode '${bumpMode}'.")
+    }
 }
