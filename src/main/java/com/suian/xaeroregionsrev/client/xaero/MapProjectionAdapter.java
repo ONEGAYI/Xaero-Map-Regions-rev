@@ -12,12 +12,15 @@ public final class MapProjectionAdapter {
     private static final float DEFAULT_PIXELS_PER_BLOCK = 0.25F;
     private static final double DEFAULT_COORDINATE_DIVISOR = 1.0D;
     private static final double DEFAULT_SCREEN_SCALE = 1.0D;
+    private static final long CALIBRATION_INTERVAL_MS = 1000L;
     private static final String XAERO_GUI_MAP_CLASS = "xaero.map.gui.GuiMap";
+    private MapCalibration calibration = MapCalibration.NONE;
+    private long lastCalibrationAtMs = Long.MIN_VALUE;
 
     public Vector2f project(Screen screen, RegionPoint point) {
         Optional<MapViewport> viewport = readXaeroViewport(screen);
         if (viewport.isPresent()) {
-            return projectInViewport(point, viewport.get());
+            return projectInViewport(point, viewport.get().withCalibration(calibration));
         }
         return projectWithPlayerFallback(screen, point);
     }
@@ -25,25 +28,55 @@ public final class MapProjectionAdapter {
     public RegionPoint unproject(Screen screen, double screenX, double screenY) {
         Optional<MapViewport> viewport = readXaeroViewport(screen);
         if (viewport.isPresent()) {
-            return unprojectInViewport(screenX, screenY, viewport.get());
+            return unprojectInViewport(screenX, screenY, viewport.get().withCalibration(calibration));
         }
         return unprojectWithPlayerFallback(screen, screenX, screenY);
     }
 
+    public void calibrate(Screen screen, double mouseX, double mouseY, long nowMs) {
+        if (!isCalibrationDue(nowMs, lastCalibrationAtMs)) {
+            return;
+        }
+        Optional<MapViewport> viewport = readXaeroViewport(screen);
+        Optional<RegionPoint> xaeroMousePoint = readXaeroMousePoint(screen);
+        if (viewport.isEmpty() || xaeroMousePoint.isEmpty()) {
+            return;
+        }
+        calibration = calibrateViewport(viewport.get(), mouseX, mouseY, xaeroMousePoint.get()).calibration();
+        lastCalibrationAtMs = nowMs;
+    }
+
+    static boolean isCalibrationDue(long nowMs, long lastCalibrationAtMs) {
+        return lastCalibrationAtMs == Long.MIN_VALUE || nowMs - lastCalibrationAtMs >= CALIBRATION_INTERVAL_MS;
+    }
+
     public static Vector2f projectInViewport(RegionPoint point, MapViewport viewport) {
-        double mapX = point.x() / viewport.coordinateDivisor();
-        double mapZ = point.z() / viewport.coordinateDivisor();
+        double mapX = point.x() / viewport.coordinateDivisor() - viewport.calibration().mapXOffset();
+        double mapZ = point.z() / viewport.coordinateDivisor() - viewport.calibration().mapZOffset();
         float x = viewport.centerX() + (float) ((mapX - viewport.cameraX()) * viewport.guiPixelsPerBlock());
         float y = viewport.centerY() + (float) ((mapZ - viewport.cameraZ()) * viewport.guiPixelsPerBlock());
         return new Vector2f(x, y);
     }
 
     public static RegionPoint unprojectInViewport(double screenX, double screenY, MapViewport viewport) {
-        double mapX = viewport.cameraX() + (screenX - viewport.centerX()) / viewport.guiPixelsPerBlock();
-        double mapZ = viewport.cameraZ() + (screenY - viewport.centerY()) / viewport.guiPixelsPerBlock();
+        double mapX = viewport.cameraX()
+                + (screenX - viewport.centerX()) / viewport.guiPixelsPerBlock()
+                + viewport.calibration().mapXOffset();
+        double mapZ = viewport.cameraZ()
+                + (screenY - viewport.centerY()) / viewport.guiPixelsPerBlock()
+                + viewport.calibration().mapZOffset();
         double worldX = mapX * viewport.coordinateDivisor();
         double worldZ = mapZ * viewport.coordinateDivisor();
         return new RegionPoint((int) Math.floor(worldX), (int) Math.floor(worldZ));
+    }
+
+    public static MapViewport calibrateViewport(MapViewport viewport, double screenX, double screenY,
+                                                RegionPoint xaeroWorldPoint) {
+        double rawMapX = viewport.cameraX() + (screenX - viewport.centerX()) / viewport.guiPixelsPerBlock();
+        double rawMapZ = viewport.cameraZ() + (screenY - viewport.centerY()) / viewport.guiPixelsPerBlock();
+        double xaeroMapX = xaeroWorldPoint.x() / viewport.coordinateDivisor();
+        double xaeroMapZ = xaeroWorldPoint.z() / viewport.coordinateDivisor();
+        return viewport.withCalibration(new MapCalibration(xaeroMapX - rawMapX, xaeroMapZ - rawMapZ));
     }
 
     private static Optional<MapViewport> readXaeroViewport(Screen screen) {
@@ -88,6 +121,25 @@ public final class MapProjectionAdapter {
         } catch (ReflectiveOperationException | RuntimeException ignored) {
             return Optional.empty();
         }
+    }
+
+    private static Optional<Integer> readInt(Object owner, String fieldName) {
+        try {
+            Field field = findField(owner.getClass(), fieldName);
+            field.setAccessible(true);
+            return Optional.of(field.getInt(owner));
+        } catch (ReflectiveOperationException | RuntimeException ignored) {
+            return Optional.empty();
+        }
+    }
+
+    private static Optional<RegionPoint> readXaeroMousePoint(Screen screen) {
+        if (!XAERO_GUI_MAP_CLASS.equals(screen.getClass().getName())) {
+            return Optional.empty();
+        }
+        return readInt(screen, "mouseBlockPosX")
+                .flatMap(x -> readInt(screen, "mouseBlockPosZ")
+                        .map(z -> new RegionPoint(x, z)));
     }
 
     private static Field findField(Class<?> type, String fieldName) throws NoSuchFieldException {
@@ -135,11 +187,18 @@ public final class MapProjectionAdapter {
     }
 
     public record MapViewport(double cameraX, double cameraZ, float centerX, float centerY,
-                              float physicalPixelsPerBlock, double coordinateDivisor, double screenScale) {
+                              float physicalPixelsPerBlock, double coordinateDivisor, double screenScale,
+                              MapCalibration calibration) {
+        public MapViewport(double cameraX, double cameraZ, float centerX, float centerY, float physicalPixelsPerBlock,
+                           double coordinateDivisor, double screenScale) {
+            this(cameraX, cameraZ, centerX, centerY, physicalPixelsPerBlock, coordinateDivisor, screenScale,
+                    MapCalibration.NONE);
+        }
+
         public MapViewport(double cameraX, double cameraZ, float centerX, float centerY, float physicalPixelsPerBlock,
                            double coordinateDivisor) {
             this(cameraX, cameraZ, centerX, centerY, physicalPixelsPerBlock, coordinateDivisor,
-                    DEFAULT_SCREEN_SCALE);
+                    DEFAULT_SCREEN_SCALE, MapCalibration.NONE);
         }
 
         public MapViewport {
@@ -152,10 +211,31 @@ public final class MapProjectionAdapter {
             if (!Double.isFinite(screenScale) || screenScale <= 0.0D) {
                 screenScale = DEFAULT_SCREEN_SCALE;
             }
+            if (calibration == null) {
+                calibration = MapCalibration.NONE;
+            }
         }
 
         public float guiPixelsPerBlock() {
             return (float) (physicalPixelsPerBlock / screenScale);
+        }
+
+        public MapViewport withCalibration(MapCalibration calibration) {
+            return new MapViewport(cameraX, cameraZ, centerX, centerY, physicalPixelsPerBlock, coordinateDivisor,
+                    screenScale, calibration);
+        }
+    }
+
+    public record MapCalibration(double mapXOffset, double mapZOffset) {
+        public static final MapCalibration NONE = new MapCalibration(0.0D, 0.0D);
+
+        public MapCalibration {
+            if (!Double.isFinite(mapXOffset)) {
+                mapXOffset = 0.0D;
+            }
+            if (!Double.isFinite(mapZOffset)) {
+                mapZOffset = 0.0D;
+            }
         }
     }
 }

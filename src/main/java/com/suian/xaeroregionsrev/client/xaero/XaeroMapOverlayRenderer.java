@@ -46,6 +46,7 @@ public final class XaeroMapOverlayRenderer {
             return;
         }
         String currentDimension = minecraft.level.dimension().location().toString();
+        PROJECTION.calibrate(screen, event.getMouseX(), event.getMouseY(), System.currentTimeMillis());
         renderRegions(event.getGuiGraphics(), screen, ClientRegionCache.regions(), currentDimension);
     }
 

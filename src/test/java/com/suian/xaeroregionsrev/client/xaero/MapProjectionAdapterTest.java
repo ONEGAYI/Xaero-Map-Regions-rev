@@ -110,4 +110,57 @@ class MapProjectionAdapterTest {
         assertEquals(320.0F, projected.y());
         assertEquals(point, MapProjectionAdapter.unprojectInViewport(projected.x(), projected.y(), viewport));
     }
+
+    @Test
+    void viewportCalibrationAlignsProjectedWorldPointWithXaeroMouseWorldPoint() {
+        MapProjectionAdapter.MapViewport rawViewport = new MapProjectionAdapter.MapViewport(
+                100.0D,
+                200.0D,
+                400.0F,
+                300.0F,
+                1.0F,
+                1.0D
+        );
+
+        MapProjectionAdapter.MapViewport calibrated = MapProjectionAdapter.calibrateViewport(
+                rawViewport,
+                430.0D,
+                320.0D,
+                new RegionPoint(125, 215)
+        );
+
+        assertEquals(new RegionPoint(125, 215), MapProjectionAdapter.unprojectInViewport(430.0D, 320.0D, calibrated));
+        Vector2f projected = MapProjectionAdapter.projectInViewport(new RegionPoint(125, 215), calibrated);
+        assertEquals(430.0F, projected.x());
+        assertEquals(320.0F, projected.y());
+    }
+
+    @Test
+    void calibrationRespectsCoordinateDivisor() {
+        MapProjectionAdapter.MapViewport rawViewport = new MapProjectionAdapter.MapViewport(
+                50.0D,
+                80.0D,
+                400.0F,
+                300.0F,
+                2.0F,
+                8.0D,
+                2.0D
+        );
+
+        MapProjectionAdapter.MapViewport calibrated = MapProjectionAdapter.calibrateViewport(
+                rawViewport,
+                410.0D,
+                320.0D,
+                new RegionPoint(440, 760)
+        );
+
+        assertEquals(new RegionPoint(440, 760), MapProjectionAdapter.unprojectInViewport(410.0D, 320.0D, calibrated));
+    }
+
+    @Test
+    void calibrationIsDueImmediatelyThenWaitsForInterval() {
+        assertEquals(true, MapProjectionAdapter.isCalibrationDue(100L, Long.MIN_VALUE));
+        assertEquals(false, MapProjectionAdapter.isCalibrationDue(500L, 100L));
+        assertEquals(true, MapProjectionAdapter.isCalibrationDue(1100L, 100L));
+    }
 }
