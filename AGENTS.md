@@ -9,11 +9,12 @@
 - 目标版本：Minecraft 1.20.1 + Forge 47.3.33。
 - 向上兼容：Forge 版本号集中放在构建属性中；Forge 与 Xaero 接入细节集中在适配层，业务逻辑不直接散落依赖版本细节。
 - 主要语言：Java。
-- Xaero's World Map 作为外部依赖使用，不打包进本项目产物。
+- Xaero's World Map 与 IMBlocker 作为开发运行期客户端依赖使用，不打包进本项目产物；`runClient` 通过 Maven 仓库自动下载这些外部模组。
 - 服务端作为区域数据权威来源，客户端只缓存和渲染同步数据。
 - 区域编辑权限默认限制为 OP 且处于创造模式的玩家。
 - 实现功能或修复问题前优先补充契约测试，能用纯 Java 单元测试覆盖的逻辑不要依赖游戏运行环境。
-- 本地烟测使用 `./gradlew clean test build` 和 `./gradlew runClient`。真实客户端或整合包可将 Xaero World Map jar 放入 `run/mods/` 或实际游戏 `mods` 目录；ForgeGradle `runClient` 开发烟测使用 `libs/runtime/` 下的 jar，通过 `fg.deobf` 加载并启用 mixin refmap 重映射，避免将发布版 raw jar 直接放入 `run/mods/`。`run/` 与 `libs/runtime/` 均不进入 Git。
+- 本地烟测使用 `./gradlew clean test build` 和 `./gradlew runClient`。ForgeGradle `runClient` 开发烟测通过 `clientRuntimeMods` 配置自动加载 Xaero World Map 与 IMBlocker，并启用 mixin refmap 重映射，避免将发布版 raw jar 直接放入 `run/mods/`。`run/` 与 `libs/runtime/` 均不进入 Git。
+- 使用 Computer Use 进入游戏后如遇到按键无反应，优先手动切换输入法到英文；IMBlocker 是首选输入法冲突解决方案，非输入框场景应由 IMBlocker 忽略中文输入法。
 
 ## 文档与提交
 
@@ -31,7 +32,7 @@
 ├── CLAUDE.md
 │   Claude 专属入口文件，通过 @AGENTS.md 引入通用规则。
 ├── build.gradle
-│   ForgeGradle 构建脚本、运行配置、Xaero 本地运行期依赖与测试依赖声明。
+│   ForgeGradle 构建脚本、运行配置、客户端运行期模组依赖与测试依赖声明。
 ├── docs/
 │   └── superpowers/
 │       ├── plans/

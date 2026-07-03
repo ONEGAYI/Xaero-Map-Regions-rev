@@ -55,20 +55,33 @@ minecraft {
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
+configurations {
+    clientRuntimeMods
+}
+
 repositories {
     mavenCentral()
-    flatDir {
-        dirs 'libs/runtime'
+    maven {
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
+        content {
+            includeGroup 'maven.modrinth'
+        }
+    }
+    maven {
+        name = 'CurseMaven'
+        url = 'https://cursemaven.com'
+        content {
+            includeGroup 'curse.maven'
+        }
     }
 }
 
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
-    def xaeroWorldMapRuntimeJar = file('libs/runtime/xaeroworldmap-forge-1.20.1-1.41.2.jar')
-    if (xaeroWorldMapRuntimeJar.exists()) {
-        runtimeOnly fg.deobf('local.xaero:xaeroworldmap-forge-1.20.1:1.41.2')
-    }
+    clientRuntimeMods fg.deobf('maven.modrinth:xaeros-world-map:forge-1.20.1-1.41.2')
+    clientRuntimeMods fg.deobf('curse.maven:imblocker-483760:4626679')
 
     testImplementation platform('org.junit:junit-bom:5.10.2')
     testImplementation 'org.junit.jupiter:junit-jupiter'
@@ -80,6 +93,7 @@ tasks.named('test', Test) {
 
 tasks.matching { it.name == 'runClient' }.configureEach {
     dependsOn 'createSrgToMcp'
+    classpath += configurations.clientRuntimeMods
 }
 
 tasks.named('processResources', ProcessResources).configure {
