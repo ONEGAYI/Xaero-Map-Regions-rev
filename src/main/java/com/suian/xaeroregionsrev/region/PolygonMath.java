@@ -21,17 +21,24 @@ public final class PolygonMath {
             return false;
         }
 
-        boolean inside = false;
-        for (int i = 0, j = polygon.size() - 1; i < polygon.size(); j = i++) {
-            RegionPoint pi = polygon.get(i);
-            RegionPoint pj = polygon.get(j);
-            boolean intersects = ((pi.z() > z) != (pj.z() > z))
-                    && (x < (long) (pj.x() - pi.x()) * (z - pi.z()) / (double) (pj.z() - pi.z()) + pi.x());
-            if (intersects) {
-                inside = !inside;
+        RegionPoint point = new RegionPoint(x, z);
+        int windingNumber = 0;
+        for (int index = 0; index < polygon.size(); index++) {
+            RegionPoint current = polygon.get(index);
+            RegionPoint next = polygon.get((index + 1) % polygon.size());
+            long orientation = orientation(current, next, point);
+            if (orientation == 0L && onSegment(current, point, next)) {
+                return true;
+            }
+            if (current.z() <= z) {
+                if (next.z() > z && orientation > 0L) {
+                    windingNumber++;
+                }
+            } else if (next.z() <= z && orientation < 0L) {
+                windingNumber--;
             }
         }
-        return inside;
+        return windingNumber != 0;
     }
 
     private static boolean hasRepeatedPoints(List<RegionPoint> points) {

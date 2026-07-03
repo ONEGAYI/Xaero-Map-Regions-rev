@@ -32,6 +32,18 @@ class PolygonMathTest {
     }
 
     @Test
+    void containsHandlesExtremeCoordinatesWithoutOverflow() {
+        var polygon = List.of(
+                new RegionPoint(Integer.MIN_VALUE, Integer.MIN_VALUE),
+                new RegionPoint(Integer.MAX_VALUE, 0),
+                new RegionPoint(Integer.MIN_VALUE, Integer.MAX_VALUE)
+        );
+
+        assertTrue(PolygonMath.isValidPolygon(polygon));
+        assertTrue(PolygonMath.contains(polygon, 0, 0));
+    }
+
+    @Test
     void lessThanThreePointsIsInvalid() {
         assertFalse(PolygonMath.isValidPolygon(List.of(new RegionPoint(0, 0), new RegionPoint(1, 1))));
     }
