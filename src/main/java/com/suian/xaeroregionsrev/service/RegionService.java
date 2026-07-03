@@ -5,9 +5,12 @@ import com.suian.xaeroregionsrev.region.ArgbColor;
 import com.suian.xaeroregionsrev.region.Region;
 import com.suian.xaeroregionsrev.region.RegionId;
 import com.suian.xaeroregionsrev.region.RegionStyleUpdater;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -15,6 +18,15 @@ public final class RegionService {
     public Collection<Region> list(ServerLevel level) {
         Objects.requireNonNull(level, "Server level cannot be null.");
         return RegionSavedData.get(level).allRegions();
+    }
+
+    public List<Region> snapshot(MinecraftServer server) {
+        Objects.requireNonNull(server, "Minecraft server cannot be null.");
+        List<Region> regions = new ArrayList<>();
+        for (ServerLevel level : server.getAllLevels()) {
+            regions.addAll(list(level));
+        }
+        return List.copyOf(regions);
     }
 
     public Optional<Region> find(ServerLevel level, RegionId id) {

@@ -2,6 +2,8 @@
   "key.categories.xaeroregionsrev": "Xaero Map Regions Rev",
   "key.xaeroregionsrev.toggle_edit_mode": "Toggle Region Edit Mode",
   "key.xaeroregionsrev.open_region_manager": "Open Region Manager",
+  "key.xaeroregionsrev.submit_draft": "Submit Region Draft",
+  "key.xaeroregionsrev.clear_or_exit_edit_mode": "Clear Draft / Exit Edit Mode",
   "button.xaeroregionsrev.edit": "Edit",
   "button.xaeroregionsrev.done": "Done",
   "button.xaeroregionsrev.save": "Save",

@@ -1,5 +1,6 @@
 package com.suian.xaeroregionsrev.network;
 
+import com.mojang.logging.LogUtils;
 import com.suian.xaeroregionsrev.network.payload.CreateRegionRequestPacket;
 import com.suian.xaeroregionsrev.network.payload.DeleteRegionRequestPacket;
 import com.suian.xaeroregionsrev.network.payload.RegionRefreshRequestPacket;
@@ -15,14 +16,19 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
+import org.slf4j.Logger;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 public final class RegionEditRequestHandler {
+    private static final Logger LOGGER = LogUtils.getLogger();
     private static final RegionService SERVICE = new RegionService();
+    private static final long REFRESH_COOLDOWN_NANOS = 2_000_000_000L;
+    private static final Map<UUID, Long> LAST_REFRESH_BY_PLAYER = new HashMap<>();
 
     private RegionEditRequestHandler() {
     }
@@ -32,6 +38,7 @@ public final class RegionEditRequestHandler {
         context.enqueueWork(() -> {
             ServerPlayer sender = context.getSender();
             if (!canManage(sender)) {
+                sendPermissionError(sender);
                 return;
             }
             ServerLevel level = sender.serverLevel();
@@ -80,6 +87,7 @@ public final class RegionEditRequestHandler {
         context.enqueueWork(() -> {
             ServerPlayer sender = context.getSender();
             if (!canManage(sender)) {
+                sendPermissionError(sender);
                 return;
             }
             ServerLevel level = sender.serverLevel();
@@ -104,6 +112,7 @@ public final class RegionEditRequestHandler {
         context.enqueueWork(() -> {
             ServerPlayer sender = context.getSender();
             if (!canManage(sender)) {
+                sendPermissionError(sender);
                 return;
             }
             RegionRequestValidator.ValidatedRegionStyleRequest request;
@@ -136,9 +145,13 @@ public final class RegionEditRequestHandler {
             if (sender == null) {
                 return;
             }
+            if (!canRefreshNow(sender.getUUID(), System.nanoTime())) {
+                sendError(sender, "Region refresh is cooling down.");
+                return;
+            }
             MinecraftServer server = sender.getServer();
             if (server != null) {
-                RegionNetwork.sendToPlayer(sender, new RegionSyncPacket(allRegions(server)));
+                RegionNetwork.sendToPlayer(sender, new RegionSyncPacket(SERVICE.snapshot(server)));
             }
         });
         context.setPacketHandled(true);
@@ -149,7 +162,13 @@ public final class RegionEditRequestHandler {
     }
 
     private static void sendError(ServerPlayer player, String message) {
-        player.sendSystemMessage(Component.literal(message));
+        if (player != null) {
+            player.sendSystemMessage(Component.literal(message));
+        }
+    }
+
+    private static void sendPermissionError(ServerPlayer player) {
+        sendError(player, "You must be an operator in creative mode to manage regions.");
     }
 
     private static RegionId parseRegionId(ServerPlayer player, String idText) {
@@ -164,15 +183,20 @@ public final class RegionEditRequestHandler {
     private static void broadcastSnapshot(ServerPlayer sender) {
         MinecraftServer server = sender.getServer();
         if (server != null) {
-            RegionNetwork.sendToAll(new RegionSyncPacket(allRegions(server)));
+            RegionNetwork.sendToAll(new RegionSyncPacket(SERVICE.snapshot(server)));
+        } else {
+            LOGGER.warn("Skipped region snapshot broadcast because player {} has no server.",
+                    sender.getGameProfile().getName());
         }
     }
 
-    private static List<Region> allRegions(MinecraftServer server) {
-        List<Region> regions = new ArrayList<>();
-        for (ServerLevel level : server.getAllLevels()) {
-            regions.addAll(SERVICE.list(level));
+    static boolean canRefreshNow(UUID playerId, long nowNanos) {
+        Long lastRefreshAt = LAST_REFRESH_BY_PLAYER.get(playerId);
+        if (lastRefreshAt != null && nowNanos >= lastRefreshAt
+                && nowNanos - lastRefreshAt < REFRESH_COOLDOWN_NANOS) {
+            return false;
         }
-        return List.copyOf(regions);
+        LAST_REFRESH_BY_PLAYER.put(playerId, nowNanos);
+        return true;
     }
 }

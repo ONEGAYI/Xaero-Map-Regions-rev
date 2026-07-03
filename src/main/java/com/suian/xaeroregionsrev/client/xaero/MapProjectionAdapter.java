@@ -12,10 +12,15 @@ public final class MapProjectionAdapter {
     private static final float DEFAULT_PIXELS_PER_BLOCK = 0.25F;
     private static final double DEFAULT_COORDINATE_DIVISOR = 1.0D;
     private static final double DEFAULT_SCREEN_SCALE = 1.0D;
-    private static final long CALIBRATION_INTERVAL_MS = 1000L;
+    private static final long CALIBRATION_INTERVAL_NANOS = 1_000_000_000L;
     private static final String XAERO_GUI_MAP_CLASS = "xaero.map.gui.GuiMap";
+    private static final MapProjectionAdapter SHARED = new MapProjectionAdapter();
     private MapCalibration calibration = MapCalibration.NONE;
-    private long lastCalibrationAtMs = Long.MIN_VALUE;
+    private long lastCalibrationAtNanos = Long.MIN_VALUE;
+
+    public static MapProjectionAdapter shared() {
+        return SHARED;
+    }
 
     public Vector2f project(Screen screen, RegionPoint point) {
         Optional<MapViewport> viewport = readXaeroViewport(screen);
@@ -33,21 +38,25 @@ public final class MapProjectionAdapter {
         return unprojectWithPlayerFallback(screen, screenX, screenY);
     }
 
-    public void calibrate(Screen screen, double mouseX, double mouseY, long nowMs) {
-        if (!isCalibrationDue(nowMs, lastCalibrationAtMs)) {
+    public void calibrate(Screen screen, double mouseX, double mouseY, long nowNanos) {
+        if (!isCalibrationDue(nowNanos, lastCalibrationAtNanos)) {
             return;
         }
         Optional<MapViewport> viewport = readXaeroViewport(screen);
         Optional<RegionPoint> xaeroMousePoint = readXaeroMousePoint(screen);
         if (viewport.isEmpty() || xaeroMousePoint.isEmpty()) {
+            calibration = MapCalibration.NONE;
+            lastCalibrationAtNanos = nowNanos;
             return;
         }
         calibration = calibrateViewport(viewport.get(), mouseX, mouseY, xaeroMousePoint.get()).calibration();
-        lastCalibrationAtMs = nowMs;
+        lastCalibrationAtNanos = nowNanos;
     }
 
-    static boolean isCalibrationDue(long nowMs, long lastCalibrationAtMs) {
-        return lastCalibrationAtMs == Long.MIN_VALUE || nowMs - lastCalibrationAtMs >= CALIBRATION_INTERVAL_MS;
+    static boolean isCalibrationDue(long nowNanos, long lastCalibrationAtNanos) {
+        return lastCalibrationAtNanos == Long.MIN_VALUE
+                || nowNanos < lastCalibrationAtNanos
+                || nowNanos - lastCalibrationAtNanos >= CALIBRATION_INTERVAL_NANOS;
     }
 
     public static Vector2f projectInViewport(RegionPoint point, MapViewport viewport) {
@@ -67,7 +76,7 @@ public final class MapProjectionAdapter {
                 + viewport.calibration().mapZOffset();
         double worldX = mapX * viewport.coordinateDivisor();
         double worldZ = mapZ * viewport.coordinateDivisor();
-        return new RegionPoint((int) Math.floor(worldX), (int) Math.floor(worldZ));
+        return new RegionPoint(floorToInt(worldX), floorToInt(worldZ));
     }
 
     public static MapViewport calibrateViewport(MapViewport viewport, double screenX, double screenY,
@@ -183,7 +192,21 @@ public final class MapProjectionAdapter {
                                                 float centerX, float centerY, float pixelsPerBlock) {
         double worldX = playerX + (screenX - centerX) / pixelsPerBlock;
         double worldZ = playerZ + (screenY - centerY) / pixelsPerBlock;
-        return new RegionPoint((int) Math.floor(worldX), (int) Math.floor(worldZ));
+        return new RegionPoint(floorToInt(worldX), floorToInt(worldZ));
+    }
+
+    private static int floorToInt(double value) {
+        if (!Double.isFinite(value)) {
+            return value < 0.0D ? Integer.MIN_VALUE : Integer.MAX_VALUE;
+        }
+        double floored = Math.floor(value);
+        if (floored <= Integer.MIN_VALUE) {
+            return Integer.MIN_VALUE;
+        }
+        if (floored >= Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        }
+        return (int) floored;
     }
 
     public record MapViewport(double cameraX, double cameraZ, float centerX, float centerY,
@@ -202,6 +225,12 @@ public final class MapProjectionAdapter {
         }
 
         public MapViewport {
+            if (!Double.isFinite(cameraX)) {
+                cameraX = 0.0D;
+            }
+            if (!Double.isFinite(cameraZ)) {
+                cameraZ = 0.0D;
+            }
             if (!Float.isFinite(physicalPixelsPerBlock) || physicalPixelsPerBlock <= 0.0F) {
                 physicalPixelsPerBlock = DEFAULT_PIXELS_PER_BLOCK;
             }

@@ -57,6 +57,10 @@ public final class RegionNbtCodec {
 
         List<RegionPoint> points = new ArrayList<>();
         ListTag pointTags = tag.getList("points", TAG_COMPOUND);
+        if (pointTags.size() > RegionLimits.MAX_POINTS_PER_REQUEST) {
+            throw new IllegalArgumentException("Region point count cannot exceed "
+                    + RegionLimits.MAX_POINTS_PER_REQUEST + ".");
+        }
         for (int i = 0; i < pointTags.size(); i++) {
             CompoundTag pointTag = pointTags.getCompound(i);
             requireField(pointTag, "x", TAG_INT);

@@ -160,7 +160,42 @@ class MapProjectionAdapterTest {
     @Test
     void calibrationIsDueImmediatelyThenWaitsForInterval() {
         assertEquals(true, MapProjectionAdapter.isCalibrationDue(100L, Long.MIN_VALUE));
-        assertEquals(false, MapProjectionAdapter.isCalibrationDue(500L, 100L));
-        assertEquals(true, MapProjectionAdapter.isCalibrationDue(1100L, 100L));
+        assertEquals(false, MapProjectionAdapter.isCalibrationDue(500_000_000L, 100L));
+        assertEquals(true, MapProjectionAdapter.isCalibrationDue(1_000_000_100L, 100L));
+    }
+
+    @Test
+    void calibrationDueTreatsClockRollbackAsDue() {
+        assertEquals(true, MapProjectionAdapter.isCalibrationDue(50L, 100L));
+    }
+
+    @Test
+    void viewportDefaultsNonFiniteCameraCoordinates() {
+        MapProjectionAdapter.MapViewport viewport = new MapProjectionAdapter.MapViewport(
+                Double.NaN,
+                Double.POSITIVE_INFINITY,
+                400.0F,
+                300.0F,
+                1.0F,
+                1.0D
+        );
+
+        assertEquals(0.0D, viewport.cameraX());
+        assertEquals(0.0D, viewport.cameraZ());
+    }
+
+    @Test
+    void unprojectClampsCoordinatesToIntegerRange() {
+        MapProjectionAdapter.MapViewport viewport = new MapProjectionAdapter.MapViewport(
+                0.0D,
+                0.0D,
+                0.0F,
+                0.0F,
+                0.000001F,
+                1.0D
+        );
+
+        assertEquals(new RegionPoint(Integer.MAX_VALUE, Integer.MIN_VALUE),
+                MapProjectionAdapter.unprojectInViewport(Double.MAX_VALUE, -Double.MAX_VALUE, viewport));
     }
 }

@@ -39,11 +39,29 @@ public final class RegionKeyMappings {
             CATEGORY
     ));
 
+    public static final Lazy<KeyMapping> SUBMIT_DRAFT = Lazy.of(() -> new KeyMapping(
+            "key.xaeroregionsrev.submit_draft",
+            XAERO_MAP_CONTEXT,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_ENTER,
+            CATEGORY
+    ));
+
+    public static final Lazy<KeyMapping> CLEAR_OR_EXIT_EDIT_MODE = Lazy.of(() -> new KeyMapping(
+            "key.xaeroregionsrev.clear_or_exit_edit_mode",
+            XAERO_MAP_CONTEXT,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_ESCAPE,
+            CATEGORY
+    ));
+
     private RegionKeyMappings() {
     }
 
     public static void register(RegisterKeyMappingsEvent event) {
         event.register(TOGGLE_EDIT_MODE.get());
         event.register(OPEN_REGION_MANAGER.get());
+        event.register(SUBMIT_DRAFT.get());
+        event.register(CLEAR_OR_EXIT_EDIT_MODE.get());
     }
 }

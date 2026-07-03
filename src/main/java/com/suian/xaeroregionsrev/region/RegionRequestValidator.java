@@ -1,5 +1,6 @@
 package com.suian.xaeroregionsrev.region;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 
@@ -45,8 +46,8 @@ public final class RegionRequestValidator {
         if (normalized.isEmpty()) {
             throw new IllegalArgumentException(fieldName + " cannot be blank.");
         }
-        if (normalized.length() > maxLength) {
-            throw new IllegalArgumentException(fieldName + " cannot exceed " + maxLength + " characters.");
+        if (normalized.getBytes(StandardCharsets.UTF_8).length > maxLength) {
+            throw new IllegalArgumentException(fieldName + " cannot exceed " + maxLength + " UTF-8 bytes.");
         }
         return normalized;
     }

@@ -17,6 +17,8 @@ import java.util.Optional;
 
 public final class RegionSavedData extends SavedData {
     private static final String DATA_NAME = "xaeroregionsrev_regions";
+    private static final int TAG_LIST = 9;
+    private static final int TAG_COMPOUND = 10;
     private final Map<RegionId, Region> regions = new LinkedHashMap<>();
 
     public static RegionSavedData get(ServerLevel level) {
@@ -25,7 +27,10 @@ public final class RegionSavedData extends SavedData {
 
     public static RegionSavedData load(CompoundTag tag) {
         RegionSavedData data = new RegionSavedData();
-        ListTag list = tag.getList("regions", 10);
+        if (tag.contains("regions") && !tag.contains("regions", TAG_LIST)) {
+            throw new IllegalArgumentException("Saved region data field 'regions' must be a list.");
+        }
+        ListTag list = tag.getList("regions", TAG_COMPOUND);
         for (int i = 0; i < list.size(); i++) {
             try {
                 Region region = RegionNbtCodec.readRegion(list.getCompound(i));

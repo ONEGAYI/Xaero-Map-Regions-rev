@@ -2,6 +2,8 @@
   "key.categories.xaeroregionsrev": "Xaero 地图区域",
   "key.xaeroregionsrev.toggle_edit_mode": "切换区域编辑模式",
   "key.xaeroregionsrev.open_region_manager": "打开区域管理器",
+  "key.xaeroregionsrev.submit_draft": "提交区域草稿",
+  "key.xaeroregionsrev.clear_or_exit_edit_mode": "清空草稿 / 退出编辑模式",
   "button.xaeroregionsrev.edit": "编辑",
   "button.xaeroregionsrev.done": "完成",
   "button.xaeroregionsrev.save": "保存",

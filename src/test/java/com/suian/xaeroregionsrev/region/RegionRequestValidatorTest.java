@@ -80,6 +80,26 @@ class RegionRequestValidatorTest {
     }
 
     @Test
+    void rejectsTextThatExceedsUtf8WireLimit() {
+        String twentySevenChineseCharacters = "地".repeat(27);
+
+        assertThrows(IllegalArgumentException.class, () -> RegionRequestValidator.validateCreate(
+                twentySevenChineseCharacters,
+                new ArgbColor(0x8800FF00),
+                "Label",
+                new ArgbColor(0xFFFFFFFF),
+                triangle()
+        ));
+        assertThrows(IllegalArgumentException.class, () -> RegionRequestValidator.validateCreate(
+                "Spawn",
+                new ArgbColor(0x8800FF00),
+                twentySevenChineseCharacters,
+                new ArgbColor(0xFFFFFFFF),
+                triangle()
+        ));
+    }
+
+    @Test
     void rejectsTooFewPointsAndDegeneratePolygons() {
         assertThrows(IllegalArgumentException.class, () -> RegionRequestValidator.validateCreate(
                 "Spawn",

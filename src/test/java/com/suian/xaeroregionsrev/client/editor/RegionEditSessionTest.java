@@ -36,6 +36,19 @@ class RegionEditSessionTest {
     }
 
     @Test
+    void draftPointsAreLimitedBeforeSubmit() {
+        RegionEditSession session = new RegionEditSession();
+        session.toggleEditing();
+
+        for (int index = 0; index < 256; index++) {
+            assertTrue(session.addDraftPoint(new RegionPoint(index, index)));
+        }
+
+        assertFalse(session.addDraftPoint(new RegionPoint(257, 257)));
+        assertEquals(256, session.draftPoints().size());
+    }
+
+    @Test
     void threeOrMorePointsCanBeSubmitted() {
         RegionEditSession session = new RegionEditSession();
         session.toggleEditing();

@@ -1,5 +1,6 @@
 package com.suian.xaeroregionsrev.client.editor;
 
+import com.suian.xaeroregionsrev.region.RegionLimits;
 import com.suian.xaeroregionsrev.region.RegionId;
 import com.suian.xaeroregionsrev.region.RegionPoint;
 
@@ -39,6 +40,9 @@ public final class RegionEditSession {
 
     public boolean addDraftPoint(RegionPoint point) {
         if (!editing) {
+            return false;
+        }
+        if (draftPoints.size() >= RegionLimits.MAX_POINTS_PER_REQUEST) {
             return false;
         }
         draftPoints.add(point);

@@ -1,17 +1,11 @@
 package com.suian.xaeroregionsrev.client.editor;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.suian.xaeroregionsrev.client.xaero.PolygonFillRenderer;
 import com.suian.xaeroregionsrev.region.Region;
 import com.suian.xaeroregionsrev.region.RegionPoint;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
-import org.joml.Matrix4f;
 import org.joml.Vector2f;
 
 import java.util.List;
@@ -134,32 +128,7 @@ public final class RegionEditorOverlay {
     }
 
     private static void drawFilledPolygon(GuiGraphics graphics, List<Vector2f> points, int color) {
-        Matrix4f matrix = graphics.pose().last().pose();
-        Tesselator tesselator = Tesselator.getInstance();
-        BufferBuilder buffer = tesselator.getBuilder();
-        float alpha = ((color >>> 24) & 0xFF) / 255.0F;
-        float red = ((color >>> 16) & 0xFF) / 255.0F;
-        float green = ((color >>> 8) & 0xFF) / 255.0F;
-        float blue = (color & 0xFF) / 255.0F;
-
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.disableDepthTest();
-        RenderSystem.disableCull();
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        try {
-            buffer.begin(VertexFormat.Mode.TRIANGLE_FAN, DefaultVertexFormat.POSITION_COLOR);
-            for (Vector2f point : points) {
-                buffer.vertex(matrix, point.x(), point.y(), 0.0F).color(red, green, blue, alpha).endVertex();
-            }
-            tesselator.end();
-        } finally {
-            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-            RenderSystem.enableCull();
-            RenderSystem.enableDepthTest();
-            RenderSystem.disableBlend();
-        }
+        PolygonFillRenderer.fill(graphics, points, color);
     }
 
     public static final class ActionRouter {

@@ -25,7 +25,7 @@ import java.util.Optional;
 public final class XaeroMapOverlayController {
     private static final RegionEditSession SESSION = new RegionEditSession();
     private static final XaeroMapInputRouter ROUTER = new XaeroMapInputRouter(SESSION);
-    private static final MapProjectionAdapter PROJECTION = new MapProjectionAdapter();
+    private static final MapProjectionAdapter PROJECTION = MapProjectionAdapter.shared();
     private static RegionContextMenu contextMenu;
 
     private XaeroMapOverlayController() {
@@ -60,6 +60,7 @@ public final class XaeroMapOverlayController {
                 return true;
             }
             contextMenu = null;
+            return true;
         }
 
         RegionPoint worldPoint = PROJECTION.unproject(screen, mouseX, mouseY);

@@ -6,11 +6,12 @@ import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.suian.xaeroregionsrev.network.RegionNetwork;
 import com.suian.xaeroregionsrev.network.payload.RegionSyncPacket;
 import com.suian.xaeroregionsrev.platform.ForgePermissionAdapter;
-import com.suian.xaeroregionsrev.region.PointMarker;
+import com.suian.xaeroregionsrev.region.ArgbColor;
 import com.suian.xaeroregionsrev.region.Region;
 import com.suian.xaeroregionsrev.region.RegionColorParser;
 import com.suian.xaeroregionsrev.region.RegionId;
 import com.suian.xaeroregionsrev.region.RegionPoint;
+import com.suian.xaeroregionsrev.region.RegionRequestValidator;
 import com.suian.xaeroregionsrev.service.RegionService;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
@@ -19,11 +20,9 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.event.RegisterCommandsEvent;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import static net.minecraft.commands.Commands.argument;
 import static net.minecraft.commands.Commands.literal;
@@ -97,14 +96,27 @@ public final class RegionCommands {
         long now = Instant.now().toEpochMilli();
         Region region;
         try {
-            region = new Region(
-                    new RegionId(name),
+            RegionRequestValidator.ValidatedRegionCreateRequest request = RegionRequestValidator.validateCreate(
                     name,
-                    level.dimension().location().toString(),
                     RegionColorParser.parse(argb),
+                    name,
+                    new ArgbColor(0xFFFFFFFF),
+                    parsePoints(pointsText)
+            );
+            RegionId id = new RegionId(request.name());
+            if (SERVICE.find(level, id).isPresent()) {
+                throw new IllegalArgumentException("Region " + id.value() + " already exists.");
+            }
+            region = new Region(
+                    id,
+                    request.name(),
+                    level.dimension().location().toString(),
+                    request.fillColor(),
+                    request.label(),
+                    request.labelColor(),
                     "default",
                     "default",
-                    parsePoints(pointsText),
+                    request.points(),
                     now,
                     now
             );
@@ -112,7 +124,7 @@ public final class RegionCommands {
         } catch (IllegalArgumentException exception) {
             throw commandError(exception.getMessage());
         }
-        RegionNetwork.sendToAll(new RegionSyncPacket(allRegions(server)));
+        RegionNetwork.sendToAll(new RegionSyncPacket(SERVICE.snapshot(server)));
         source.sendSuccess(() -> Component.literal("Created region " + region.id().value()), true);
         return 1;
     }
@@ -123,16 +135,8 @@ public final class RegionCommands {
     }
 
     private static int createPoint(CommandSourceStack source, String playerName, String mode, String iconName, String label, String positionText) throws CommandSyntaxException {
-        int[] position = parseBlockPosition(positionText);
-        PointMarker marker;
-        try {
-            UUID targetId = UUID.nameUUIDFromBytes(playerName.getBytes(StandardCharsets.UTF_8));
-            marker = new PointMarker(targetId, mode, iconName, label, position[0], position[1], position[2]);
-        } catch (IllegalArgumentException exception) {
-            throw commandError(exception.getMessage());
-        }
-        source.sendSuccess(() -> Component.literal("Created point marker " + marker.label() + " for " + playerName), true);
-        return 1;
+        parseBlockPosition(positionText);
+        return messageOnly(source, "createpoint is not implemented in the MVP data flow");
     }
 
     private static List<RegionPoint> parsePoints(String text) throws CommandSyntaxException {
@@ -180,14 +184,6 @@ public final class RegionCommands {
         } catch (NumberFormatException exception) {
             throw commandError("Position coordinates must be valid integers.");
         }
-    }
-
-    private static List<Region> allRegions(MinecraftServer server) {
-        List<Region> regions = new ArrayList<>();
-        for (ServerLevel level : server.getAllLevels()) {
-            regions.addAll(SERVICE.list(level));
-        }
-        return List.copyOf(regions);
     }
 
     private static CommandSyntaxException commandError(String message) {

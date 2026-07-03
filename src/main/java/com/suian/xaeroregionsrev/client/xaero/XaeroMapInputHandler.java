@@ -7,7 +7,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraftforge.client.event.ScreenEvent;
-import org.lwjgl.glfw.GLFW;
 
 public final class XaeroMapInputHandler {
     private XaeroMapInputHandler() {
@@ -22,15 +21,16 @@ public final class XaeroMapInputHandler {
             return;
         }
         InputConstants.Key key = InputConstants.getKey(event.getKeyCode(), event.getScanCode());
+        XaeroMapInputRouter.KeyAction action = resolveKeyAction(
+                RegionKeyMappings.TOGGLE_EDIT_MODE.get().isActiveAndMatches(key),
+                RegionKeyMappings.OPEN_REGION_MANAGER.get().isActiveAndMatches(key),
+                RegionKeyMappings.SUBMIT_DRAFT.get().isActiveAndMatches(key),
+                RegionKeyMappings.CLEAR_OR_EXIT_EDIT_MODE.get().isActiveAndMatches(key),
+                event.getKeyCode()
+        );
         XaeroMapInputRouter.Result result = XaeroMapInputRouter.Result.IGNORED;
-        if (RegionKeyMappings.TOGGLE_EDIT_MODE.get().isActiveAndMatches(key)) {
-            result = XaeroMapOverlayController.handleKey(XaeroMapInputRouter.KeyAction.TOGGLE_EDIT_MODE, screen);
-        } else if (RegionKeyMappings.OPEN_REGION_MANAGER.get().isActiveAndMatches(key)) {
-            result = XaeroMapOverlayController.handleKey(XaeroMapInputRouter.KeyAction.OPEN_REGION_MANAGER, screen);
-        } else if (event.getKeyCode() == GLFW.GLFW_KEY_ENTER || event.getKeyCode() == GLFW.GLFW_KEY_KP_ENTER) {
-            result = XaeroMapOverlayController.handleKey(XaeroMapInputRouter.KeyAction.SUBMIT_DRAFT, screen);
-        } else if (event.getKeyCode() == GLFW.GLFW_KEY_ESCAPE) {
-            result = XaeroMapOverlayController.handleKey(XaeroMapInputRouter.KeyAction.ESCAPE, screen);
+        if (action != null) {
+            result = XaeroMapOverlayController.handleKey(action, screen);
         }
         if (result != XaeroMapInputRouter.Result.IGNORED) {
             event.setCanceled(true);
@@ -40,6 +40,9 @@ public final class XaeroMapInputHandler {
     public static void onMouseButtonPressed(ScreenEvent.MouseButtonPressed.Pre event) {
         Screen screen = event.getScreen();
         if (!XaeroScreenDetector.isWorldMapScreen(screen)) {
+            return;
+        }
+        if (screen.getFocused() instanceof EditBox) {
             return;
         }
         Minecraft minecraft = Minecraft.getInstance();
@@ -59,11 +62,33 @@ public final class XaeroMapInputHandler {
         }
     }
 
+    static XaeroMapInputRouter.KeyAction resolveKeyAction(
+            boolean toggleEditModeMatches,
+            boolean openManagerMatches,
+            boolean submitDraftMatches,
+            boolean clearOrExitMatches,
+            int keyCode
+    ) {
+        if (submitDraftMatches) {
+            return XaeroMapInputRouter.KeyAction.SUBMIT_DRAFT;
+        }
+        if (clearOrExitMatches) {
+            return XaeroMapInputRouter.KeyAction.ESCAPE;
+        }
+        if (toggleEditModeMatches) {
+            return XaeroMapInputRouter.KeyAction.TOGGLE_EDIT_MODE;
+        }
+        if (openManagerMatches) {
+            return XaeroMapInputRouter.KeyAction.OPEN_REGION_MANAGER;
+        }
+        return null;
+    }
+
     private static RegionEditorOverlay.MouseButton toMouseButton(int button) {
         return switch (button) {
-            case GLFW.GLFW_MOUSE_BUTTON_LEFT -> RegionEditorOverlay.MouseButton.LEFT;
-            case GLFW.GLFW_MOUSE_BUTTON_RIGHT -> RegionEditorOverlay.MouseButton.RIGHT;
-            case GLFW.GLFW_MOUSE_BUTTON_MIDDLE -> RegionEditorOverlay.MouseButton.MIDDLE;
+            case 0 -> RegionEditorOverlay.MouseButton.LEFT;
+            case 1 -> RegionEditorOverlay.MouseButton.RIGHT;
+            case 2 -> RegionEditorOverlay.MouseButton.MIDDLE;
             default -> RegionEditorOverlay.MouseButton.OTHER;
         };
     }
