@@ -35,7 +35,7 @@
 3. Xaero 地图页增加编辑模式切换按钮。
 4. 注册可在 MC 控制设置中修改的快捷键：
    - 默认 `R`：切换区域编辑模式。
-   - 默认 `T`：普通游戏视角打开区域管理器。
+   - 默认 `T`：仅在 Xaero 地图页打开区域管理器。
 5. 编辑模式中：
    - 鼠标中键在当前地图光标位置添加草稿顶点。
    - 左键选择已有区域。
@@ -289,10 +289,10 @@ public static void handle(CreateRegionRequestPacket packet, Supplier<NetworkEven
   - `key.xaeroregionsrev.open_region_manager`
   - category `key.categories.xaeroregionsrev`
 - 默认输入使用 `InputConstants.Type.KEYSYM` + GLFW key token。
-- conflict context 使用 GUI 语境或自定义只在 Xaero map screen active 的 context。
+- conflict context 必须限定为 Xaero map screen active；普通游戏视角不响应本模组 `R` / `T`。
 - 在 client-only MOD event bus 订阅 `RegisterKeyMappingsEvent`，通过 `FMLJavaModLoadingContext.get().getModEventBus()` 或等价入口注册。
 - 在 `XaeroRegionsRev` 构造中通过 `DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> XaeroRegionsClient::register)` 注册客户端事件。
-- `T` 在普通游戏视角打开 `RegionManagerScreen`，该屏幕先实现当前维度区域列表与刷新入口；跨维度管理留到后续阶段。
+- `T` 仅在 Xaero 地图页打开 `RegionManagerScreen`，该屏幕先实现当前维度区域列表与刷新入口；跨维度管理留到后续阶段。
 
 ### 8. 客户端编辑会话与选择逻辑
 
@@ -459,7 +459,8 @@ Smoke checklist:
 - Open Xaero World Map.
 - Existing command-created regions still render fill and labels.
 - `R` toggles edit mode, and key appears in Controls menu.
-- `T` opens the region manager from normal gameplay, and key appears in Controls menu.
+- `T` opens the region manager from the Xaero map screen, and key appears in Controls menu.
+- Normal gameplay view does not respond to the mod's `R` / `T` shortcuts.
 - Edit button toggles edit mode.
 - Middle-click adds points.
 - Left-click selects existing regions.
