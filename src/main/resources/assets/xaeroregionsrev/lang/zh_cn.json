@@ -10,6 +10,7 @@
   "button.xaeroregionsrev.done": "完成",
   "button.xaeroregionsrev.save": "保存",
   "button.xaeroregionsrev.cancel": "取消",
+  "button.xaeroregionsrev.favorite_color": "收藏",
   "button.xaeroregionsrev.refresh": "刷新",
   "button.xaeroregionsrev.previous_page": "上一页",
   "button.xaeroregionsrev.next_page": "下一页",
@@ -35,5 +36,7 @@
   "field.xaeroregionsrev.label": "标签",
   "field.xaeroregionsrev.center": "中心点",
   "field.xaeroregionsrev.fill_color": "填充颜色",
-  "field.xaeroregionsrev.label_color": "标签颜色"
+  "field.xaeroregionsrev.label_color": "标签颜色",
+  "field.xaeroregionsrev.recent_colors": "历史颜色",
+  "field.xaeroregionsrev.favorite_colors": "收藏颜色"
 }

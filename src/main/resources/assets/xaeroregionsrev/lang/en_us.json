@@ -10,6 +10,7 @@
   "button.xaeroregionsrev.done": "Done",
   "button.xaeroregionsrev.save": "Save",
   "button.xaeroregionsrev.cancel": "Cancel",
+  "button.xaeroregionsrev.favorite_color": "Favorite",
   "button.xaeroregionsrev.refresh": "Refresh",
   "button.xaeroregionsrev.previous_page": "Previous",
   "button.xaeroregionsrev.next_page": "Next",
@@ -35,5 +36,7 @@
   "field.xaeroregionsrev.label": "Label",
   "field.xaeroregionsrev.center": "Center",
   "field.xaeroregionsrev.fill_color": "Fill Color",
-  "field.xaeroregionsrev.label_color": "Label Color"
+  "field.xaeroregionsrev.label_color": "Label Color",
+  "field.xaeroregionsrev.recent_colors": "Recent Colors",
+  "field.xaeroregionsrev.favorite_colors": "Favorite Colors"
 }

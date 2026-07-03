@@ -18,6 +18,10 @@ import net.minecraft.network.chat.Component;
 import java.util.List;
 
 public final class RegionStyleEditScreen extends Screen {
+    private static final int FORM_WIDTH = 220;
+    private static final int COLOR_BOX_WIDTH = 178;
+    private static final int COLOR_PICKER_BUTTON_WIDTH = 36;
+    private static final int COLOR_PICKER_BUTTON_GAP = 6;
     private final Screen previous;
     private final Region region;
     private final RegionContextMenu.Command editCommand;
@@ -28,6 +32,7 @@ public final class RegionStyleEditScreen extends Screen {
     private EditBox fillColorBox;
     private EditBox labelColorBox;
     private Component errorMessage;
+    private FormText formTextOverride;
 
     private RegionStyleEditScreen(Screen previous, Region region, RegionContextMenu.Command editCommand,
                                   List<RegionPoint> draftPoints, Runnable afterSave) {
@@ -58,10 +63,18 @@ public final class RegionStyleEditScreen extends Screen {
     }
 
     public record CreateValues(String name, ArgbColor fillColor, String label, ArgbColor labelColor,
-                               List<RegionPoint> points) {
+                                List<RegionPoint> points) {
         public CreateValues {
             points = List.copyOf(points);
         }
+    }
+
+    public enum ColorTarget {
+        FILL,
+        LABEL
+    }
+
+    public record FormText(String label, String fillColorText, String labelColorText) {
     }
 
     public static CreateValues createValues(String label, String fillColorText, String labelColorText,
@@ -75,7 +88,7 @@ public final class RegionStyleEditScreen extends Screen {
     }
 
     public static StyleValues updateValues(Region region, RegionContextMenu.Command command, String fillColorText,
-                                           String labelText, String labelColorText) {
+                                            String labelText, String labelColorText) {
         ArgbColor fillColor = command == RegionContextMenu.Command.EDIT_FILL_COLOR
                 ? RegionColorParser.parse(fillColorText)
                 : region.color();
@@ -88,33 +101,44 @@ public final class RegionStyleEditScreen extends Screen {
         return new StyleValues(request.fillColor(), request.label(), request.labelColor());
     }
 
+    public static FormText formTextAfterPicker(ColorTarget target, FormText current, ArgbColor color) {
+        String formattedColor = RegionColorParser.format(color);
+        return switch (target) {
+            case FILL -> new FormText(current.label(), formattedColor, current.labelColorText());
+            case LABEL -> new FormText(current.label(), current.fillColorText(), formattedColor);
+        };
+    }
+
     @Override
     protected void init() {
-        int formWidth = 220;
-        int left = (width - formWidth) / 2;
+        int left = (width - FORM_WIDTH) / 2;
         int top = Math.max(32, height / 2 - (region == null ? 62 : 78));
         int row = region == null ? 0 : 32;
         if (region != null) {
-            nameBox = new EditBox(font, left, top + 18, formWidth, 20, Component.translatable("field.xaeroregionsrev.name"));
+            nameBox = new EditBox(font, left, top + 18, FORM_WIDTH, 20, Component.translatable("field.xaeroregionsrev.name"));
             nameBox.setMaxLength(RegionLimits.MAX_NAME_LENGTH);
         }
-        labelBox = new EditBox(font, left, top + 18 + row, formWidth, 20, Component.translatable("field.xaeroregionsrev.label"));
-        fillColorBox = new EditBox(font, left, top + 50 + row, formWidth, 20, Component.translatable("field.xaeroregionsrev.fill_color"));
-        labelColorBox = new EditBox(font, left, top + 82 + row, formWidth, 20, Component.translatable("field.xaeroregionsrev.label_color"));
+        labelBox = new EditBox(font, left, top + 18 + row, FORM_WIDTH, 20, Component.translatable("field.xaeroregionsrev.label"));
+        fillColorBox = new EditBox(font, left, top + 50 + row, COLOR_BOX_WIDTH, 20, Component.translatable("field.xaeroregionsrev.fill_color"));
+        labelColorBox = new EditBox(font, left, top + 82 + row, COLOR_BOX_WIDTH, 20, Component.translatable("field.xaeroregionsrev.label_color"));
         labelBox.setMaxLength(RegionLimits.MAX_LABEL_LENGTH);
         fillColorBox.setMaxLength(10);
         labelColorBox.setMaxLength(10);
 
         if (region == null) {
-            labelBox.setValue("region_" + System.currentTimeMillis());
-            fillColorBox.setValue("#6600AAFF");
-            labelColorBox.setValue("#FFFFFFFF");
+            FormText formText = formTextOrDefault(new FormText("region_" + System.currentTimeMillis(),
+                    "#6600AAFF", "#FFFFFFFF"));
+            labelBox.setValue(formText.label());
+            fillColorBox.setValue(formText.fillColorText());
+            labelColorBox.setValue(formText.labelColorText());
         } else {
             nameBox.setValue(region.name());
             nameBox.setEditable(false);
-            labelBox.setValue(region.label());
-            fillColorBox.setValue(RegionColorParser.format(region.color()));
-            labelColorBox.setValue(RegionColorParser.format(region.labelColor()));
+            FormText formText = formTextOrDefault(new FormText(region.label(),
+                    RegionColorParser.format(region.color()), RegionColorParser.format(region.labelColor())));
+            labelBox.setValue(formText.label());
+            fillColorBox.setValue(formText.fillColorText());
+            labelColorBox.setValue(formText.labelColorText());
             applyEditMode();
         }
 
@@ -124,6 +148,16 @@ public final class RegionStyleEditScreen extends Screen {
         addRenderableWidget(labelBox);
         addRenderableWidget(fillColorBox);
         addRenderableWidget(labelColorBox);
+        addRenderableWidget(Button.builder(Component.literal("PAL"),
+                        button -> openColorPicker(ColorTarget.FILL,
+                                Component.translatable("field.xaeroregionsrev.fill_color")))
+                .bounds(colorPickerButtonX(left), fillColorBox.getY(), COLOR_PICKER_BUTTON_WIDTH, 20)
+                .build()).active = region == null || editCommand == RegionContextMenu.Command.EDIT_FILL_COLOR;
+        addRenderableWidget(Button.builder(Component.literal("PAL"),
+                        button -> openColorPicker(ColorTarget.LABEL,
+                                Component.translatable("field.xaeroregionsrev.label_color")))
+                .bounds(colorPickerButtonX(left), labelColorBox.getY(), COLOR_PICKER_BUTTON_WIDTH, 20)
+                .build()).active = region == null || editCommand == RegionContextMenu.Command.EDIT_LABEL_COLOR;
         addRenderableWidget(Button.builder(Component.translatable("button.xaeroregionsrev.save"), button -> save())
                 .bounds(left, top + 114 + row, 104, 20)
                 .build());
@@ -188,6 +222,33 @@ public final class RegionStyleEditScreen extends Screen {
         fillColorBox.setEditable(editCommand == RegionContextMenu.Command.EDIT_FILL_COLOR);
         labelBox.setEditable(editCommand == RegionContextMenu.Command.EDIT_LABEL_TEXT);
         labelColorBox.setEditable(editCommand == RegionContextMenu.Command.EDIT_LABEL_COLOR);
+    }
+
+    private void openColorPicker(ColorTarget target, Component pickerTitle) {
+        captureFormText();
+        try {
+            ArgbColor initialColor = RegionColorParser.parse(target == ColorTarget.FILL
+                    ? formTextOverride.fillColorText()
+                    : formTextOverride.labelColorText());
+            minecraft.setScreen(new ColorPickerScreen(this, pickerTitle, initialColor, color -> {
+                formTextOverride = formTextAfterPicker(target, formTextOverride, color);
+                minecraft.setScreen(this);
+            }));
+        } catch (RuntimeException exception) {
+            errorMessage = Component.literal(exception.getMessage());
+        }
+    }
+
+    private FormText formTextOrDefault(FormText defaultText) {
+        return formTextOverride == null ? defaultText : formTextOverride;
+    }
+
+    private void captureFormText() {
+        formTextOverride = new FormText(labelBox.getValue(), fillColorBox.getValue(), labelColorBox.getValue());
+    }
+
+    private int colorPickerButtonX(int formLeft) {
+        return formLeft + COLOR_BOX_WIDTH + COLOR_PICKER_BUTTON_GAP;
     }
 
     private void drawFieldLabel(GuiGraphics graphics, Component label, int x, int y) {

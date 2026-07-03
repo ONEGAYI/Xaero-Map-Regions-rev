@@ -80,6 +80,25 @@ class RegionStyleEditScreenTest {
         assertEquals(true, values.name().startsWith("region_"));
     }
 
+    @Test
+    void pickerColorUpdatesTargetTextWithoutResettingOtherFields() {
+        RegionStyleEditScreen.FormText formText = new RegionStyleEditScreen.FormText(
+                "My Region",
+                "#6600AAFF",
+                "#FFFFFFFF"
+        );
+
+        RegionStyleEditScreen.FormText updated = RegionStyleEditScreen.formTextAfterPicker(
+                RegionStyleEditScreen.ColorTarget.FILL,
+                formText,
+                new ArgbColor(0x80123456)
+        );
+
+        assertEquals("My Region", updated.label());
+        assertEquals("#80123456", updated.fillColorText());
+        assertEquals("#FFFFFFFF", updated.labelColorText());
+    }
+
     private static Region region() {
         return new Region(
                 new RegionId("spawn"),
