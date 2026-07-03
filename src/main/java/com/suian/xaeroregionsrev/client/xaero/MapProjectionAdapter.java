@@ -39,6 +39,24 @@ public final class MapProjectionAdapter {
         return unprojectWithPlayerFallback(screen, screenX, screenY);
     }
 
+    public boolean centerOn(Screen screen, RegionPoint point) {
+        Optional<MapViewport> viewport = readXaeroViewport(screen);
+        if (viewport.isEmpty()) {
+            return false;
+        }
+        MapViewport calibrated = viewport.get().withCalibration(calibration);
+        double cameraX = centeredCameraCoordinate(point.x(), calibrated.coordinateDivisor(), calibrated.calibration().mapXOffset());
+        double cameraZ = centeredCameraCoordinate(point.z(), calibrated.coordinateDivisor(), calibrated.calibration().mapZOffset());
+        boolean wroteCamera = writeDouble(screen, "cameraX", cameraX) && writeDouble(screen, "cameraZ", cameraZ);
+        if (wroteCamera) {
+            writeBoolean(screen, "shouldResetCameraPos", false);
+            writeObject(screen, "cameraDestination", null);
+            writeObject(screen, "cameraDestinationAnimX", null);
+            writeObject(screen, "cameraDestinationAnimZ", null);
+        }
+        return wroteCamera;
+    }
+
     public void calibrate(Screen screen, double mouseX, double mouseY, long nowNanos) {
         if (!isCalibrationDue(nowNanos, lastCalibrationAtNanos)) {
             return;
@@ -88,6 +106,10 @@ public final class MapProjectionAdapter {
         double xaeroMapX = xaeroWorldPoint.x() / viewport.coordinateDivisor();
         double xaeroMapZ = xaeroWorldPoint.z() / viewport.coordinateDivisor();
         return viewport.withCalibration(new MapCalibration(xaeroMapX - rawMapX, xaeroMapZ - rawMapZ));
+    }
+
+    static double centeredCameraCoordinate(int blockCoordinate, double coordinateDivisor, double calibrationOffset) {
+        return blockCoordinate / coordinateDivisor - calibrationOffset;
     }
 
     static MapCalibration stabilizeCalibration(MapCalibration current, MapCalibration next) {
@@ -153,6 +175,39 @@ public final class MapProjectionAdapter {
             return Optional.of(field.getInt(owner));
         } catch (ReflectiveOperationException | RuntimeException ignored) {
             return Optional.empty();
+        }
+    }
+
+    private static boolean writeDouble(Object owner, String fieldName, double value) {
+        try {
+            Field field = findField(owner.getClass(), fieldName);
+            field.setAccessible(true);
+            field.setDouble(owner, value);
+            return true;
+        } catch (ReflectiveOperationException | RuntimeException ignored) {
+            return false;
+        }
+    }
+
+    private static boolean writeBoolean(Object owner, String fieldName, boolean value) {
+        try {
+            Field field = findField(owner.getClass(), fieldName);
+            field.setAccessible(true);
+            field.setBoolean(owner, value);
+            return true;
+        } catch (ReflectiveOperationException | RuntimeException ignored) {
+            return false;
+        }
+    }
+
+    private static boolean writeObject(Object owner, String fieldName, Object value) {
+        try {
+            Field field = findField(owner.getClass(), fieldName);
+            field.setAccessible(true);
+            field.set(owner, value);
+            return true;
+        } catch (ReflectiveOperationException | RuntimeException ignored) {
+            return false;
         }
     }
 

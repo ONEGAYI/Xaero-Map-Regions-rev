@@ -97,8 +97,26 @@ public final class XaeroMapOverlayController {
 
     public static void renderRegionDecorations(GuiGraphics graphics, Screen screen, Region region, List<Vector2f> projected,
                                                int mouseX, int mouseY) {
+        renderBoundary(graphics, region, projected);
         renderSelectedOutline(graphics, region, projected);
         renderLabel(graphics, screen, region, projected, mouseX, mouseY);
+    }
+
+    private static void renderBoundary(GuiGraphics graphics, Region region, List<Vector2f> projected) {
+        RegionRenderStyle.Decoration decoration = RegionRenderStyle.decorationForProjectedBounds(
+                projectedWidth(projected), projectedHeight(projected));
+        if (!decoration.visible()) {
+            return;
+        }
+        int boundaryColor = RegionRenderStyle.boundaryColor(region.color().value());
+        for (int i = 0; i < projected.size(); i++) {
+            Vector2f from = projected.get(i);
+            Vector2f to = projected.get((i + 1) % projected.size());
+            RegionEditorOverlay.drawLine(graphics, from, to, boundaryColor, decoration.boundaryThickness());
+        }
+        for (Vector2f point : projected) {
+            RegionEditorOverlay.drawFilledCircle(graphics, point, decoration.vertexRadius(), boundaryColor);
+        }
     }
 
     public static void renderEditor(GuiGraphics graphics, Screen screen, int mouseX, int mouseY) {
@@ -117,11 +135,42 @@ public final class XaeroMapOverlayController {
         if (selected.isEmpty() || !selected.get().equals(region.id())) {
             return;
         }
+        RegionRenderStyle.Decoration decoration = RegionRenderStyle.decorationForProjectedBounds(
+                projectedWidth(projected), projectedHeight(projected));
+        if (!decoration.visible()) {
+            return;
+        }
         for (int i = 0; i < projected.size(); i++) {
             Vector2f from = projected.get(i);
             Vector2f to = projected.get((i + 1) % projected.size());
-            RegionEditorOverlay.drawLine(graphics, from, to, 0xFFFFFFFF);
+            RegionEditorOverlay.drawLine(graphics, from, to, 0xFFFFFFFF, decoration.boundaryThickness());
         }
+    }
+
+    private static float projectedWidth(List<Vector2f> projected) {
+        if (projected.isEmpty()) {
+            return 0.0F;
+        }
+        float minX = Float.MAX_VALUE;
+        float maxX = -Float.MAX_VALUE;
+        for (Vector2f point : projected) {
+            minX = Math.min(minX, point.x());
+            maxX = Math.max(maxX, point.x());
+        }
+        return maxX - minX;
+    }
+
+    private static float projectedHeight(List<Vector2f> projected) {
+        if (projected.isEmpty()) {
+            return 0.0F;
+        }
+        float minY = Float.MAX_VALUE;
+        float maxY = -Float.MAX_VALUE;
+        for (Vector2f point : projected) {
+            minY = Math.min(minY, point.y());
+            maxY = Math.max(maxY, point.y());
+        }
+        return maxY - minY;
     }
 
     private static void renderLabel(GuiGraphics graphics, Screen screen, Region region, List<Vector2f> projected,

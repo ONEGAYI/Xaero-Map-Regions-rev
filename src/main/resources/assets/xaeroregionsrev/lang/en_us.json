@@ -11,6 +11,9 @@
   "button.xaeroregionsrev.save": "Save",
   "button.xaeroregionsrev.cancel": "Cancel",
   "button.xaeroregionsrev.refresh": "Refresh",
+  "button.xaeroregionsrev.previous_page": "Previous",
+  "button.xaeroregionsrev.next_page": "Next",
+  "button.xaeroregionsrev.jump": "Jump",
   "tooltip.xaeroregionsrev.edit_region": "Edit Region",
   "tooltip.xaeroregionsrev.exit_edit_region": "Exit Region Edit Mode",
   "tooltip.xaeroregionsrev.add_draft_point": "Middle-click to Add Vertex",
@@ -30,6 +33,7 @@
   "screen.xaeroregionsrev.confirm_delete": "Delete region?",
   "field.xaeroregionsrev.name": "Name",
   "field.xaeroregionsrev.label": "Label",
+  "field.xaeroregionsrev.center": "Center",
   "field.xaeroregionsrev.fill_color": "Fill Color",
   "field.xaeroregionsrev.label_color": "Label Color"
 }

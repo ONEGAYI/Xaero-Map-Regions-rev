@@ -112,6 +112,15 @@ class MapProjectionAdapterTest {
     }
 
     @Test
+    void centeredCameraCoordinatesAccountForDimensionDivisorAndCalibration() {
+        MapProjectionAdapter.MapCalibration calibration = new MapProjectionAdapter.MapCalibration(2.5D, -4.0D);
+        RegionPoint target = new RegionPoint(84, -40);
+
+        assertEquals(8.0D, MapProjectionAdapter.centeredCameraCoordinate(target.x(), 8.0D, calibration.mapXOffset()));
+        assertEquals(-1.0D, MapProjectionAdapter.centeredCameraCoordinate(target.z(), 8.0D, calibration.mapZOffset()));
+    }
+
+    @Test
     void viewportCalibrationAlignsProjectedWorldPointWithXaeroMouseWorldPoint() {
         MapProjectionAdapter.MapViewport rawViewport = new MapProjectionAdapter.MapViewport(
                 100.0D,

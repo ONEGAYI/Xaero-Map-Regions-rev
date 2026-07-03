@@ -202,13 +202,37 @@ public final class RegionEditorOverlay {
     }
 
     public static void drawLine(GuiGraphics graphics, Vector2f from, Vector2f to, int color) {
+        drawLine(graphics, from, to, color, 1);
+    }
+
+    public static void drawLine(GuiGraphics graphics, Vector2f from, Vector2f to, int color, int thickness) {
         int steps = Math.max(1, Math.round(Math.max(Math.abs(to.x() - from.x()), Math.abs(to.y() - from.y()))));
         for (int i = 0; i <= steps; i++) {
             float t = i / (float) steps;
             int x = Math.round(from.x() + (to.x() - from.x()) * t);
             int y = Math.round(from.y() + (to.y() - from.y()) * t);
-            graphics.fill(x, y, x + 1, y + 1, color);
+            drawCenteredSquare(graphics, x, y, Math.max(1, thickness), color);
         }
+    }
+
+    public static void drawFilledCircle(GuiGraphics graphics, Vector2f center, int radius, int color) {
+        int centerX = Math.round(center.x());
+        int centerY = Math.round(center.y());
+        int safeRadius = Math.max(1, radius);
+        int radiusSquared = safeRadius * safeRadius;
+        for (int y = -safeRadius; y <= safeRadius; y++) {
+            for (int x = -safeRadius; x <= safeRadius; x++) {
+                if (x * x + y * y <= radiusSquared) {
+                    graphics.fill(centerX + x, centerY + y, centerX + x + 1, centerY + y + 1, color);
+                }
+            }
+        }
+    }
+
+    private static void drawCenteredSquare(GuiGraphics graphics, int centerX, int centerY, int size, int color) {
+        int before = size / 2;
+        int after = size - before;
+        graphics.fill(centerX - before, centerY - before, centerX + after, centerY + after, color);
     }
 
     private static void drawFilledPolygon(GuiGraphics graphics, List<Vector2f> points, int color) {

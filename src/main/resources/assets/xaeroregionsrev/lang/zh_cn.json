@@ -11,6 +11,9 @@
   "button.xaeroregionsrev.save": "保存",
   "button.xaeroregionsrev.cancel": "取消",
   "button.xaeroregionsrev.refresh": "刷新",
+  "button.xaeroregionsrev.previous_page": "上一页",
+  "button.xaeroregionsrev.next_page": "下一页",
+  "button.xaeroregionsrev.jump": "跳转",
   "tooltip.xaeroregionsrev.edit_region": "编辑区域",
   "tooltip.xaeroregionsrev.exit_edit_region": "退出区域编辑模式",
   "tooltip.xaeroregionsrev.add_draft_point": "中键添加顶点",
@@ -30,6 +33,7 @@
   "screen.xaeroregionsrev.confirm_delete": "删除区域？",
   "field.xaeroregionsrev.name": "名称",
   "field.xaeroregionsrev.label": "标签",
+  "field.xaeroregionsrev.center": "中心点",
   "field.xaeroregionsrev.fill_color": "填充颜色",
   "field.xaeroregionsrev.label_color": "标签颜色"
 }
