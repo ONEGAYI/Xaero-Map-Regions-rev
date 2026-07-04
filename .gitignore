@@ -3,6 +3,8 @@ build/
 bin/
 out/
 run/
+run-client/
+run-server/
 run-data/
 libs/runtime/
 .tmp/

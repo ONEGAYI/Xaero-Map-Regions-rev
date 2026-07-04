@@ -10,9 +10,9 @@
 
 ### 其他改进
 
-- 迁移主线构建到 NeoForge 1.21.1 与 ModDevGradle，构建产物名包含 `neoforge-1.21.1` 以区分加载器与目标 Minecraft 版本。（直接提交 ad4e7c9）
-- 将区域同步与地图内编辑网络包迁移为 NeoForge payload，并保留 SavedData NBT 兼容测试覆盖。（直接提交 ad4e7c9）
-- 保留 `forge/1.20.1` 分支作为 Forge 1.20.1 历史维护线，主线后续维护面向 NeoForge 1.21.1。（直接提交 d3ef3c1）
+- 迁移主线构建到 NeoForge 1.21.1 与 ModDevGradle，构建产物名包含 `neoforge-1.21.1` 以区分加载器与目标 Minecraft 版本。
+- 将区域同步与地图内编辑网络包迁移为 NeoForge payload，并保留 SavedData NBT 兼容与异常存档边界测试覆盖。
+- 保留 `forge/1.20.1` 分支作为 Forge 1.20.1 历史维护线，分支指向迁移前发布提交 `e1fd13e`。
 
 ## [0.1.2] - 2026-07-04
 

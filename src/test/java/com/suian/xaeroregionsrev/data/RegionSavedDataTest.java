@@ -1,6 +1,7 @@
 package com.suian.xaeroregionsrev.data;
 
 import com.suian.xaeroregionsrev.region.ArgbColor;
+import com.suian.xaeroregionsrev.region.ColorPaletteLimits;
 import com.suian.xaeroregionsrev.region.RegionPoint;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -32,6 +33,23 @@ class RegionSavedDataTest {
         RegionSavedData loaded = RegionSavedData.load(data.save(new CompoundTag(), emptyRegistries()), emptyRegistries());
 
         assertEquals(List.of(new ArgbColor(0x80445566), new ArgbColor(0xFF112233)), loaded.colorHistory());
+    }
+
+    @Test
+    void loadTrimsOversizedSharedColorHistoryToSyncLimit() {
+        CompoundTag root = new CompoundTag();
+        ListTag colorHistory = new ListTag();
+        for (int i = 0; i < ColorPaletteLimits.MAX_COLORS + 3; i++) {
+            colorHistory.add(IntTag.valueOf(0xFF000000 | i));
+        }
+        root.put("colorHistory", colorHistory);
+
+        RegionSavedData loaded = RegionSavedData.load(root, emptyRegistries());
+
+        assertEquals(ColorPaletteLimits.MAX_COLORS, loaded.colorHistory().size());
+        assertEquals(new ArgbColor(0xFF000000), loaded.colorHistory().getFirst());
+        assertEquals(new ArgbColor(0xFF000000 | (ColorPaletteLimits.MAX_COLORS - 1)),
+                loaded.colorHistory().getLast());
     }
 
     @Test

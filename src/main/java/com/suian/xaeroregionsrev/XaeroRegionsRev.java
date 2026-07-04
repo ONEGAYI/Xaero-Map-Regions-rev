@@ -13,8 +13,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
@@ -32,10 +32,19 @@ public final class XaeroRegionsRev {
     public XaeroRegionsRev(IEventBus modEventBus) {
         modEventBus.addListener(RegionNetwork::register);
         if (FMLEnvironment.dist == Dist.CLIENT) {
-            com.suian.xaeroregionsrev.client.XaeroRegionsClient.register(modEventBus);
+            registerClient(modEventBus);
         }
         NeoForge.EVENT_BUS.register(this);
         LOGGER.info("Xaero Map Regions Rev loaded.");
+    }
+
+    private static void registerClient(IEventBus modEventBus) {
+        try {
+            Class<?> clientClass = Class.forName("com.suian.xaeroregionsrev.client.XaeroRegionsClient");
+            clientClass.getMethod("register", IEventBus.class).invoke(null, modEventBus);
+        } catch (ReflectiveOperationException exception) {
+            throw new IllegalStateException("Failed to initialize Xaero Map Regions Rev client hooks.", exception);
+        }
     }
 
     @SubscribeEvent

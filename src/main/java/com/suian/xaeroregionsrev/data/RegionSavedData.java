@@ -2,6 +2,7 @@ package com.suian.xaeroregionsrev.data;
 
 import com.suian.xaeroregionsrev.XaeroRegionsRev;
 import com.suian.xaeroregionsrev.region.ArgbColor;
+import com.suian.xaeroregionsrev.region.ColorPaletteLimits;
 import com.suian.xaeroregionsrev.region.Region;
 import com.suian.xaeroregionsrev.region.RegionId;
 import com.suian.xaeroregionsrev.region.RegionNbtCodec;
@@ -52,8 +53,9 @@ public final class RegionSavedData extends SavedData {
             }
         }
         ListTag colorList = tag.getList(COLOR_HISTORY_KEY, TAG_INT);
-        List<ArgbColor> loadedColors = new ArrayList<>(colorList.size());
-        for (int i = 0; i < colorList.size(); i++) {
+        int colorCount = Math.min(colorList.size(), ColorPaletteLimits.MAX_COLORS);
+        List<ArgbColor> loadedColors = new ArrayList<>(colorCount);
+        for (int i = 0; i < colorCount; i++) {
             loadedColors.add(new ArgbColor(colorList.getInt(i)));
         }
         data.colorHistory = List.copyOf(loadedColors);

@@ -97,6 +97,44 @@ class RegionNbtCodecTest {
         );
     }
 
+    @Test
+    void readRegionRejectsStringsThatCannotBeSynced() {
+        CompoundTag longId = validRegionTag();
+        longId.putString("id", "a".repeat(RegionLimits.MAX_ID_LENGTH + 1));
+        CompoundTag longName = validRegionTag();
+        longName.putString("name", "a".repeat(RegionLimits.MAX_NAME_LENGTH + 1));
+        CompoundTag longDimension = validRegionTag();
+        longDimension.putString("dimension", "a".repeat(RegionLimits.MAX_DIMENSION_LENGTH + 1));
+        CompoundTag longLabel = validRegionTag();
+        longLabel.putString("label", "a".repeat(RegionLimits.MAX_LABEL_LENGTH + 1));
+        CompoundTag longCategory = validRegionTag();
+        longCategory.putString("category", "a".repeat(RegionLimits.MAX_CATEGORY_LENGTH + 1));
+        CompoundTag longIcon = validRegionTag();
+        longIcon.putString("iconName", "a".repeat(RegionLimits.MAX_ICON_NAME_LENGTH + 1));
+
+        assertAll(
+                () -> assertThrows(IllegalArgumentException.class, () -> RegionNbtCodec.readRegion(longId)),
+                () -> assertThrows(IllegalArgumentException.class, () -> RegionNbtCodec.readRegion(longName)),
+                () -> assertThrows(IllegalArgumentException.class, () -> RegionNbtCodec.readRegion(longDimension)),
+                () -> assertThrows(IllegalArgumentException.class, () -> RegionNbtCodec.readRegion(longLabel)),
+                () -> assertThrows(IllegalArgumentException.class, () -> RegionNbtCodec.readRegion(longCategory)),
+                () -> assertThrows(IllegalArgumentException.class, () -> RegionNbtCodec.readRegion(longIcon))
+        );
+    }
+
+    @Test
+    void readRegionRejectsCjkStringsThatExceedUtf8SyncLimit() {
+        CompoundTag tag = validRegionTag();
+        tag.putString("label", "界".repeat(RegionLimits.MAX_LABEL_LENGTH));
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> RegionNbtCodec.readRegion(tag)
+        );
+
+        assertTrue(exception.getMessage().contains("UTF-8 bytes"));
+    }
+
     private static CompoundTag validRegionTag() {
         return RegionNbtCodec.writeRegion(new Region(
                 new RegionId("spawn"),

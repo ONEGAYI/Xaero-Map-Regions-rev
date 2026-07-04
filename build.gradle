@@ -28,10 +28,12 @@ neoForge {
 
         client {
             client()
+            gameDirectory = project.file('run-client')
         }
 
         server {
             server()
+            gameDirectory = project.file('run-server')
             programArgument '--nogui'
         }
 
@@ -65,6 +67,13 @@ neoForge {
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
+configurations {
+    clientRuntimeMods {
+        canBeConsumed = false
+        canBeResolved = true
+    }
+}
+
 repositories {
     mavenCentral()
     maven {
@@ -84,7 +93,7 @@ repositories {
 }
 
 dependencies {
-    clientAdditionalRuntimeClasspath 'curse.maven:xaeros-world-map-317780:6778114'
+    clientRuntimeMods "curse.maven:xaeros-world-map-317780:${xaero_world_map_runtime_file_id}"
 
     testImplementation platform('org.junit:junit-bom:5.10.2')
     testImplementation 'org.junit.jupiter:junit-jupiter'
@@ -96,7 +105,22 @@ tasks.named('test', Test) {
 }
 
 tasks.named('clean', Delete).configure {
-    delete 'bin', 'logs', '.tmp', 'run/logs'
+    delete 'bin', 'logs', '.tmp', 'run/logs', 'run-client/logs', 'run-server/logs', 'run-data/logs'
+}
+
+tasks.register('syncClientRuntimeMods', Sync) {
+    group = 'neoForge runs'
+    description = 'Sync external runtime mods for the NeoForge client run.'
+    from configurations.clientRuntimeMods
+    into layout.projectDirectory.dir('run-client/mods')
+}
+
+tasks.named('prepareClientRun') {
+    dependsOn tasks.named('syncClientRuntimeMods')
+}
+
+tasks.named('runClient') {
+    dependsOn tasks.named('syncClientRuntimeMods')
 }
 
 tasks.named('processResources', ProcessResources).configure {

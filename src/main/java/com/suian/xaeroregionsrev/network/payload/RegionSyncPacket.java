@@ -25,10 +25,6 @@ public record RegionSyncPacket(List<Region> regions) implements CustomPacketPayl
     public static final int MAX_REGIONS = 4096;
     public static final int MAX_POINTS_PER_REGION = RegionLimits.MAX_POINTS_PER_REQUEST;
     public static final int MAX_TOTAL_POINTS = 8192;
-    private static final int MAX_ID_LENGTH = RegionLimits.MAX_NAME_LENGTH;
-    private static final int MAX_DIMENSION_LENGTH = 256;
-    private static final int MAX_CATEGORY_LENGTH = 80;
-    private static final int MAX_ICON_NAME_LENGTH = 80;
 
     public RegionSyncPacket {
         regions = List.copyOf(regions);
@@ -45,14 +41,14 @@ public record RegionSyncPacket(List<Region> regions) implements CustomPacketPayl
         buffer.writeVarInt(packet.regions.size());
         for (Region region : packet.regions) {
             validatePointCount(region.points().size());
-            buffer.writeUtf(region.id().value(), MAX_ID_LENGTH);
+            buffer.writeUtf(region.id().value(), RegionLimits.MAX_ID_LENGTH);
             buffer.writeUtf(region.name(), RegionLimits.MAX_NAME_LENGTH);
-            buffer.writeUtf(region.dimension(), MAX_DIMENSION_LENGTH);
+            buffer.writeUtf(region.dimension(), RegionLimits.MAX_DIMENSION_LENGTH);
             buffer.writeInt(region.color().value());
             buffer.writeUtf(region.label(), RegionLimits.MAX_LABEL_LENGTH);
             buffer.writeInt(region.labelColor().value());
-            buffer.writeUtf(region.category(), MAX_CATEGORY_LENGTH);
-            buffer.writeUtf(region.iconName(), MAX_ICON_NAME_LENGTH);
+            buffer.writeUtf(region.category(), RegionLimits.MAX_CATEGORY_LENGTH);
+            buffer.writeUtf(region.iconName(), RegionLimits.MAX_ICON_NAME_LENGTH);
             buffer.writeLong(region.createdAt());
             buffer.writeLong(region.updatedAt());
             buffer.writeVarInt(region.points().size());
@@ -68,14 +64,14 @@ public record RegionSyncPacket(List<Region> regions) implements CustomPacketPayl
         List<Region> regions = new ArrayList<>(size);
         int totalPoints = 0;
         for (int i = 0; i < size; i++) {
-            RegionId id = new RegionId(buffer.readUtf(MAX_ID_LENGTH));
+            RegionId id = new RegionId(buffer.readUtf(RegionLimits.MAX_ID_LENGTH));
             String name = buffer.readUtf(RegionLimits.MAX_NAME_LENGTH);
-            String dimension = buffer.readUtf(MAX_DIMENSION_LENGTH);
+            String dimension = buffer.readUtf(RegionLimits.MAX_DIMENSION_LENGTH);
             ArgbColor color = new ArgbColor(buffer.readInt());
             String label = buffer.readUtf(RegionLimits.MAX_LABEL_LENGTH);
             ArgbColor labelColor = new ArgbColor(buffer.readInt());
-            String category = buffer.readUtf(MAX_CATEGORY_LENGTH);
-            String iconName = buffer.readUtf(MAX_ICON_NAME_LENGTH);
+            String category = buffer.readUtf(RegionLimits.MAX_CATEGORY_LENGTH);
+            String iconName = buffer.readUtf(RegionLimits.MAX_ICON_NAME_LENGTH);
             long createdAt = buffer.readLong();
             long updatedAt = buffer.readLong();
             int pointCount = readBoundedCount(buffer, MAX_POINTS_PER_REGION, pointCountMessage());

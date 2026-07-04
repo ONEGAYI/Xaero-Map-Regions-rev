@@ -58,7 +58,7 @@
 - `java.toolchain.languageVersion = JavaLanguageVersion.of(21)`。
 - `neoForge { version = project.neo_version }`。
 - run configs 保留 `client`、`server`、`gameTestServer`、`data`。
-- `clientAdditionalRuntimeClasspath` 或等价 ModDevGradle 运行期配置继续承载 Xaero World Map 与 IMBlocker，发布 jar 不打包这些运行期模组。
+- `syncClientRuntimeMods` 或等价开发运行期配置继续自动同步 Xaero World Map 到独立客户端运行目录，发布 jar 不打包该运行期模组。IMBlocker 仅在找到兼容 NeoForge 1.21.1 的运行期 artifact 后再加入；当前可暂不自动加载，并把输入法冲突作为手动烟测注意事项记录。
 
 构建产物必须区分 loader 和 Minecraft 版本：
 
@@ -176,12 +176,12 @@ NeoForge 1.21.1 不继续使用 Forge `SimpleChannel`。网络层迁移为 paylo
 
 ## Xaero World Map 运行期依赖
 
-`runClient` 继续自动加载 Xaero World Map 和 IMBlocker，不把它们打包进产物。
+`runClient` 继续自动加载 Xaero World Map，不把它打包进产物。当前实现使用独立 `run-client` 目录承载开发运行期模组，避免 `runServer` 误加载客户端运行期依赖。IMBlocker 仅在找到兼容 NeoForge 1.21.1 的运行期 artifact 后再加入。
 
 NeoForge 1.21.1 需要确认可用的 Xaero World Map 运行期坐标：
 
-- 优先使用 Modrinth Maven 上匹配 `neoforge-1.21.1` 的 Xaero World Map artifact。
-- 如果 Modrinth Maven 命名与 Forge 线不同，迁移时以实际解析成功的 artifact 为准。
+- 当前使用 CurseMaven 文件 ID，由 `gradle.properties` 的 `xaero_world_map_runtime_file_id` 驱动 `clientRuntimeMods`。
+- 如果后续切回 Modrinth Maven artifact，需同步调整 `build.gradle` 坐标和 `gradle.properties` 属性命名，避免运行期版本说明与实际依赖脱节。
 - 如果 IMBlocker 无 NeoForge 1.21.1 运行期版本，开发环境可以暂时仅加载 Xaero World Map，输入法冲突作为手动烟测注意事项记录。
 
 Xaero 接入仍保持在 `client/xaero` 包内，迁移不扩大对 Xaero 内部类的耦合范围。

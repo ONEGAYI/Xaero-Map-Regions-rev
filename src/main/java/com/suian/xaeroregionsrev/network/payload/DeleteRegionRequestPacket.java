@@ -26,11 +26,11 @@ public record DeleteRegionRequestPacket(String idText) implements CustomPacketPa
     }
 
     public static void encode(DeleteRegionRequestPacket packet, FriendlyByteBuf buffer) {
-        buffer.writeUtf(packet.idText, RegionLimits.MAX_NAME_LENGTH);
+        buffer.writeUtf(packet.idText, RegionLimits.MAX_ID_LENGTH);
     }
 
     public static DeleteRegionRequestPacket decode(FriendlyByteBuf buffer) {
-        return new DeleteRegionRequestPacket(buffer.readUtf(RegionLimits.MAX_NAME_LENGTH));
+        return new DeleteRegionRequestPacket(buffer.readUtf(RegionLimits.MAX_ID_LENGTH));
     }
 
     public com.suian.xaeroregionsrev.region.RegionId id() {

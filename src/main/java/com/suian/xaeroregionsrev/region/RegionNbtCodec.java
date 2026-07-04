@@ -3,6 +3,7 @@ package com.suian.xaeroregionsrev.region;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -71,15 +72,24 @@ public final class RegionNbtCodec {
             throw new IllegalArgumentException("Region points must form a valid polygon.");
         }
 
+        String id = boundedString(tag, "id", RegionLimits.MAX_ID_LENGTH);
+        String name = boundedString(tag, "name", RegionLimits.MAX_NAME_LENGTH);
+        String dimension = boundedString(tag, "dimension", RegionLimits.MAX_DIMENSION_LENGTH);
+        String label = tag.contains("label", TAG_STRING)
+                ? boundedString(tag, "label", RegionLimits.MAX_LABEL_LENGTH)
+                : name;
+        String category = boundedString(tag, "category", RegionLimits.MAX_CATEGORY_LENGTH);
+        String iconName = boundedString(tag, "iconName", RegionLimits.MAX_ICON_NAME_LENGTH);
+
         return new Region(
-                new RegionId(tag.getString("id")),
-                tag.getString("name"),
-                tag.getString("dimension"),
+                new RegionId(id),
+                name,
+                dimension,
                 new ArgbColor(tag.getInt("color")),
-                tag.contains("label", TAG_STRING) ? tag.getString("label") : tag.getString("name"),
+                label,
                 tag.contains("labelColor", TAG_INT) ? new ArgbColor(tag.getInt("labelColor")) : new ArgbColor(0xFFFFFFFF),
-                tag.getString("category"),
-                tag.getString("iconName"),
+                category,
+                iconName,
                 points,
                 tag.getLong("createdAt"),
                 tag.getLong("updatedAt")
@@ -90,5 +100,14 @@ public final class RegionNbtCodec {
         if (!tag.contains(key, type)) {
             throw new IllegalArgumentException("Missing or invalid region NBT field: " + key);
         }
+    }
+
+    private static String boundedString(CompoundTag tag, String key, int maxBytes) {
+        String value = tag.getString(key);
+        if (value.getBytes(StandardCharsets.UTF_8).length > maxBytes) {
+            throw new IllegalArgumentException("Saved region NBT field '" + key
+                    + "' cannot exceed " + maxBytes + " UTF-8 bytes.");
+        }
+        return value;
     }
 }

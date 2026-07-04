@@ -44,7 +44,7 @@ public record UpdateRegionStyleRequestPacket(
 
     public static void encode(UpdateRegionStyleRequestPacket packet, FriendlyByteBuf buffer) {
         buffer.writeLong(packet.requestId);
-        buffer.writeUtf(packet.idText, RegionLimits.MAX_NAME_LENGTH);
+        buffer.writeUtf(packet.idText, RegionLimits.MAX_ID_LENGTH);
         buffer.writeInt(packet.fillColor.value());
         buffer.writeUtf(packet.label, RegionLimits.MAX_LABEL_LENGTH);
         buffer.writeInt(packet.labelColor.value());
@@ -52,7 +52,7 @@ public record UpdateRegionStyleRequestPacket(
 
     public static UpdateRegionStyleRequestPacket decode(FriendlyByteBuf buffer) {
         long requestId = buffer.readLong();
-        String idText = buffer.readUtf(RegionLimits.MAX_NAME_LENGTH);
+        String idText = buffer.readUtf(RegionLimits.MAX_ID_LENGTH);
         ArgbColor fillColor = new ArgbColor(buffer.readInt());
         String label = buffer.readUtf(RegionLimits.MAX_LABEL_LENGTH);
         ArgbColor labelColor = new ArgbColor(buffer.readInt());
