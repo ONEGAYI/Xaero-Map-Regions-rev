@@ -4,6 +4,26 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 的结构，并使用语义化版本。
 
+## [0.1.1] - 2026-07-04
+
+这是一个 patch 版本，重点改进调色盘数据持久化、高分辨率地图/调色盘显示体验，并补齐版本与清理相关的 Gradle 工具。
+
+### 新功能
+
+- 调色盘历史颜色改为服务端存档共享，并在登录、刷新和颜色保存后同步给玩家。（直接提交 e706db8）
+- 调色盘收藏颜色改为玩家个人配置，保存到客户端 `config/xaero_map_region_rev/favourite.json`。（直接提交 e706db8）
+- 新增 `bump` Gradle 任务，支持 `VERSION` 指定版本以及 `patch` / `minor` / `major` 递增。（直接提交 f75b3d9）
+
+### Bug 修复
+
+- 改善 2K/高分辨率地图下区域标签过于保守的问题，可读投影面积达到阈值时会显示标签。（直接提交 b8400f6）
+- 改善 2K/高 GUI 缩放下调色盘历史色、收藏色和底部按钮重叠/推挤的问题。（直接提交 b8400f6）
+
+### 其他改进
+
+- 将 Xaero World Map 运行期版本与依赖范围集中到 `gradle.properties` 管理。（直接提交 f75b3d9）
+- 扩展 `clean` 任务，额外清理 `bin/`、根目录 `logs/`、`.tmp/` 和 `run/logs/`，同时保留端测世界、配置和缓存。（直接提交 7eb3a32）
+
 ## [0.1.0] - 2026-07-03
 
 这是 Xaero Map Regions Rev 的首个 MVP 发布版本，面向 Minecraft 1.20.1 + Forge 47.3.33。版本重点是服务端同步区域数据、Xaero 世界地图覆盖层渲染、地图内编辑和基础样式管理。
@@ -35,4 +55,5 @@
 
 <!-- 变更链接 -->
 
+[0.1.1]: https://github.com/ONEGAYI/Xaero-Map-Regions-rev/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/ONEGAYI/Xaero-Map-Regions-rev/commits/v0.1.0
