@@ -58,7 +58,7 @@
 - `java.toolchain.languageVersion = JavaLanguageVersion.of(21)`。
 - `neoForge { version = project.neo_version }`。
 - run configs 保留 `client`、`server`、`gameTestServer`、`data`。
-- `localRuntime` 或等价运行期配置继续承载 Xaero World Map 与 IMBlocker，发布 jar 不打包这些运行期模组。
+- `clientAdditionalRuntimeClasspath` 或等价 ModDevGradle 运行期配置继续承载 Xaero World Map 与 IMBlocker，发布 jar 不打包这些运行期模组。
 
 构建产物必须区分 loader 和 Minecraft 版本：
 
@@ -154,7 +154,7 @@ NeoForge 1.21.1 不继续使用 Forge `SimpleChannel`。网络层迁移为 paylo
 - `RegionNetwork.register()` 改为监听 `RegisterPayloadHandlersEvent`。
 - 服务端处理器从 `NetworkEvent.Context` 迁移到 NeoForge payload context，仍在主线程执行写操作。
 - 服务端发送改为 `PacketDistributor.sendToPlayer` 与 `PacketDistributor.sendToAllPlayers`。
-- 客户端发送改为 `ClientPacketDistributor.sendToServer`。
+- 客户端发送改为 NeoForge 1.21.1 的 `PacketDistributor.sendToServer`。
 
 当前协议包保持原集合：
 
