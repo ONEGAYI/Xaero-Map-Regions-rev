@@ -91,6 +91,10 @@ tasks.named('test', Test) {
     useJUnitPlatform()
 }
 
+tasks.named('clean', Delete).configure {
+    delete 'bin', 'logs', '.tmp', 'run/logs'
+}
+
 tasks.matching { it.name == 'runClient' }.configureEach {
     dependsOn 'createSrgToMcp'
     classpath += configurations.clientRuntimeMods

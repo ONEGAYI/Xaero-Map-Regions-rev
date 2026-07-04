@@ -22,6 +22,7 @@
 PowerShell 环境优先使用 `.\gradlew.bat`；Git Bash、Linux 或 macOS 环境可将前缀替换为 `./gradlew`。
 
 - `.\gradlew.bat test`：运行纯 Java 契约测试。
+- `.\gradlew.bat clean`：清理 `build/`、`bin/`、根目录 `logs/`、`.tmp/` 和 `run/logs/`；不清理 `run/saves`、`run/config`、Xaero 地图缓存或 `.gradle/`。
 - `.\gradlew.bat clean test build`：完整清理、测试与构建烟测。
 - `.\gradlew.bat runClient`：启动 Forge 开发客户端；会通过 `clientRuntimeMods` 自动下载并加载 Xaero World Map 与 IMBlocker。
 - `.\gradlew.bat bump "-PVERSION=0.1.1"`：将 `gradle.properties` 中的 `mod_version` 设置为指定版本。
