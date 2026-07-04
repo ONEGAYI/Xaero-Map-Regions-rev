@@ -4,6 +4,16 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 的结构，并使用语义化版本。
 
+## [Unreleased]
+
+本阶段将主力维护线迁移到 Minecraft 1.21.1 + NeoForge，并保留 Forge 1.20.1 历史维护分支。迁移重点是构建链、网络 payload、SavedData 兼容与运行期烟测。
+
+### 其他改进
+
+- 迁移主线构建到 NeoForge 1.21.1 与 ModDevGradle，构建产物名包含 `neoforge-1.21.1` 以区分加载器与目标 Minecraft 版本。（直接提交 ad4e7c9）
+- 将区域同步与地图内编辑网络包迁移为 NeoForge payload，并保留 SavedData NBT 兼容测试覆盖。（直接提交 ad4e7c9）
+- 保留 `forge/1.20.1` 分支作为 Forge 1.20.1 历史维护线，主线后续维护面向 NeoForge 1.21.1。（直接提交 d3ef3c1）
+
 ## [0.1.2] - 2026-07-04
 
 这是一个 patch 版本，重点改善地图内编辑提交反馈和高分辨率下的区域标签显示。编辑请求现在由服务端回执驱动界面关闭与失败提示，避免客户端权限误判和重复提交。
