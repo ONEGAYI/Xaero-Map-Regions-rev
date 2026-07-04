@@ -6,13 +6,29 @@
 
 ## [Unreleased]
 
-本阶段将主力维护线迁移到 Minecraft 1.21.1 + NeoForge，并保留 Forge 1.20.1 历史维护分支。迁移重点是构建链、网络 payload、SavedData 兼容与运行期烟测。
+暂无。
+
+## [0.1.3] - 2026-07-04
+
+这是一个面向 NeoForge 1.21.1 主线的迁移与修复版本。主线现在以 NeoForge 1.21.1 作为主要维护目标，并保留 Forge 1.20.1 历史分支；同时修复了迁移后的服务端加载边界、异常存档边界和表单文字模糊问题。
+
+### 新功能
+
+- 支持 Minecraft 1.21.1 + NeoForge 21.1.235 主线，构建产物名包含 `neoforge-1.21.1`，便于和 Forge 1.20.1 历史维护线区分。（无 PR，直接提交 ad4e7c9）
+
+### Bug 修复
+
+- 修复 NeoForge dedicated server 加载风险：通过客户端入口与 S2C payload 字符串桥接，避免服务端误加载 client-only 类。（无 PR，直接提交 cb4bec0）
+- 加强 SavedData / NBT 读取边界，裁剪颜色历史并拒绝超出同步上限的存档字符串，降低异常或旧存档导致同步异常的风险。（无 PR，直接提交 cb4bec0）
+- 修复自定义表单、颜色选择器与区域管理器的说明文字被 1.21.1 背景模糊阶段覆盖而显示发虚的问题。（无 PR，直接提交 6266497）
 
 ### 其他改进
 
-- 迁移主线构建到 NeoForge 1.21.1 与 ModDevGradle，构建产物名包含 `neoforge-1.21.1` 以区分加载器与目标 Minecraft 版本。
-- 将区域同步与地图内编辑网络包迁移为 NeoForge payload，并保留 SavedData NBT 兼容与异常存档边界测试覆盖。
-- 保留 `forge/1.20.1` 分支作为 Forge 1.20.1 历史维护线，分支指向迁移前发布提交 `e1fd13e`。
+- 将构建系统从 ForgeGradle 迁移到 ModDevGradle，并迁移 mod 入口、事件注册、NeoForge payload 网络、客户端发送、SavedData 签名与测试 classpath。（无 PR，直接提交 ad4e7c9）
+- 将区域同步与地图内编辑请求包迁移为 NeoForge payload，并新增共享 `PacketCodecs` 与 clientbound payload 分发桥接。（无 PR，直接提交 ad4e7c9、cb4bec0）
+- 将 Xaero World Map 与 IMBlocker 作为开发客户端运行期依赖同步到独立 `run-client/mods`，同时让 `runServer` 使用独立 `run-server`，避免服务端端测误加载客户端模组。（无 PR，直接提交 cb4bec0、6266497）
+- 补充 NeoForge 1.21.1 主线迁移设计与实施计划，明确 `master` 作为 NeoForge 主维护线、`forge/1.20.1` 作为 Forge 历史维护线。（无 PR，直接提交 d3ef3c1、15fb01f、464b8dc）
+- 忽略 `.vscode` 本地编辑器配置目录，避免开发环境文件进入版本控制。（无 PR，直接提交 f1047e4）
 
 ## [0.1.2] - 2026-07-04
 
@@ -80,6 +96,7 @@
 
 <!-- 变更链接 -->
 
+[0.1.3]: https://github.com/ONEGAYI/Xaero-Map-Regions-rev/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/ONEGAYI/Xaero-Map-Regions-rev/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/ONEGAYI/Xaero-Map-Regions-rev/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/ONEGAYI/Xaero-Map-Regions-rev/commits/v0.1.0
