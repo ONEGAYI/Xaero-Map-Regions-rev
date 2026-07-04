@@ -88,8 +88,37 @@ public final class RegionManagerScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics, mouseX, mouseY, partialTick);
+        updateButtonState();
+        super.render(graphics, mouseX, mouseY, partialTick);
+
         graphics.drawCenteredString(font, title, width / 2, 18, 0xFFFFFFFF);
+        renderListText(graphics);
+    }
+
+    @Override
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        super.renderBackground(graphics, mouseX, mouseY, partialTick);
+        renderListBackgrounds(graphics, mouseX, mouseY);
+    }
+
+    private void renderListBackgrounds(GuiGraphics graphics, int mouseX, int mouseY) {
+        List<Region> regions = currentRegions();
+        int pageSize = pageSize();
+        int listWidth = listWidth();
+        page = RegionManagerListModel.clampPage(page, regions.size(), pageSize);
+        int left = listLeft();
+        List<Region> visibleRegions = RegionManagerListModel.pageItems(regions, page, pageSize);
+        for (int index = 0; index < visibleRegions.size(); index++) {
+            Region region = visibleRegions.get(index);
+            int rowY = LIST_TOP + index * ROW_HEIGHT;
+            boolean selected = selectedRegionId != null && selectedRegionId.equals(region.id());
+            boolean hovered = rowBoundsContains(mouseX, mouseY, index);
+            int fill = selected ? 0x884169E1 : hovered ? 0x552D3748 : 0x33000000;
+            graphics.fill(left, rowY - 3, left + listWidth, rowY + ROW_HEIGHT - 3, fill);
+        }
+    }
+
+    private void renderListText(GuiGraphics graphics) {
         List<Region> regions = currentRegions();
         int pageSize = pageSize();
         int listWidth = listWidth();
@@ -103,10 +132,6 @@ public final class RegionManagerScreen extends Screen {
         for (int index = 0; index < visibleRegions.size(); index++) {
             Region region = visibleRegions.get(index);
             int rowY = LIST_TOP + index * ROW_HEIGHT;
-            boolean selected = selectedRegionId != null && selectedRegionId.equals(region.id());
-            boolean hovered = rowBoundsContains(mouseX, mouseY, index);
-            int fill = selected ? 0x884169E1 : hovered ? 0x552D3748 : 0x33000000;
-            graphics.fill(left, rowY - 3, left + listWidth, rowY + ROW_HEIGHT - 3, fill);
             graphics.drawString(font, region.label(), labelX, rowY, region.labelColor().value(), true);
             graphics.drawString(font, RegionManagerListModel.formatCenter(region), centerX, rowY, 0xFFE5E7EB, false);
         }
@@ -115,8 +140,6 @@ public final class RegionManagerScreen extends Screen {
         }
         int pageCount = RegionManagerListModel.pageCount(regions.size(), pageSize);
         graphics.drawCenteredString(font, Component.literal((page + 1) + " / " + pageCount), width / 2, pageLabelY(), 0xFFAAAAAA);
-        updateButtonState();
-        super.render(graphics, mouseX, mouseY, partialTick);
     }
 
     @Override

@@ -94,6 +94,7 @@ repositories {
 
 dependencies {
     clientRuntimeMods "curse.maven:xaeros-world-map-317780:${xaero_world_map_runtime_file_id}"
+    clientRuntimeMods "curse.maven:imblocker-483760:${imblocker_runtime_file_id}"
 
     testImplementation platform('org.junit:junit-bom:5.10.2')
     testImplementation 'org.junit.jupiter:junit-jupiter'

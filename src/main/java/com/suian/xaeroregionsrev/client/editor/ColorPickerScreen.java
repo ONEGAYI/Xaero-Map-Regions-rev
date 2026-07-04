@@ -86,20 +86,25 @@ public final class ColorPickerScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics, mouseX, mouseY, partialTick);
         ColorPickerModel.Layout layout = layout();
-        renderPanel(graphics);
-        graphics.drawCenteredString(font, title, width / 2, layout.top() + 14, 0xFFFFFFFF);
-        renderColorPlate(graphics);
-        renderChannelLabels(graphics);
-        swatches.clear();
         ColorPickerModel.PaletteLayout palette = paletteLayout(layout);
-        renderSwatches(graphics, Component.translatable("field.xaeroregionsrev.recent_colors"), ClientColorHistoryCache.colors(),
-                layout.controlsLeft(), palette.recentY(), palette.rows(), false);
-        renderSwatches(graphics, Component.translatable("field.xaeroregionsrev.favorite_colors"), FAVORITE_COLOR_STORE.colors(),
-                layout.controlsLeft(), palette.favoriteY(), palette.rows(), true);
-        renderCurrentColor(graphics);
         super.render(graphics, mouseX, mouseY, partialTick);
+        renderForegroundText(graphics, layout, palette);
+    }
+
+    @Override
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        super.renderBackground(graphics, mouseX, mouseY, partialTick);
+        ColorPickerModel.Layout layout = layout();
+        ColorPickerModel.PaletteLayout palette = paletteLayout(layout);
+        renderPanel(graphics);
+        renderColorPlate(graphics);
+        swatches.clear();
+        renderSwatches(graphics, ClientColorHistoryCache.colors(),
+                layout.controlsLeft(), palette.recentY(), palette.rows(), false);
+        renderSwatches(graphics, FAVORITE_COLOR_STORE.colors(),
+                layout.controlsLeft(), palette.favoriteY(), palette.rows(), true);
+        renderCurrentColorSwatch(graphics);
     }
 
     @Override
@@ -240,9 +245,8 @@ public final class ColorPickerScreen extends Screen {
         graphics.drawString(font, "A", x, y + CHANNEL_ROW_HEIGHT * 3, 0xFFE5E7EB, false);
     }
 
-    private void renderSwatches(GuiGraphics graphics, Component label, List<ArgbColor> colors, int x, int y,
-                                int rows, boolean removable) {
-        graphics.drawString(font, label, x, y - 12, 0xFFFFCC66, false);
+    private void renderSwatches(GuiGraphics graphics, List<ArgbColor> colors, int x, int y, int rows,
+                                boolean removable) {
         int columns = swatchColumns(layout());
         for (int i = 0; i < columns * rows; i++) {
             int row = i / columns;
@@ -261,13 +265,29 @@ public final class ColorPickerScreen extends Screen {
         }
     }
 
-    private void renderCurrentColor(GuiGraphics graphics) {
+    private void renderCurrentColorSwatch(GuiGraphics graphics) {
         ColorPickerModel.Layout layout = layout();
         int x = layout.left() + 18;
         int y = Math.min(layout.plateTop() + layout.plateDiameter() + 10, layout.top() + layout.height() - 42);
-        graphics.drawString(font, RegionColorParser.format(channels.toColor()), x + 38, y + 8, 0xFFE5E7EB, false);
         graphics.fill(x, y, x + 28, y + 28, 0xFF111827);
         graphics.fill(x + 2, y + 2, x + 26, y + 26, channels.toColor().value());
+    }
+
+    private void renderForegroundText(GuiGraphics graphics, ColorPickerModel.Layout layout,
+                                      ColorPickerModel.PaletteLayout palette) {
+        graphics.drawCenteredString(font, title, width / 2, layout.top() + 14, 0xFFFFFFFF);
+        renderChannelLabels(graphics);
+        graphics.drawString(font, Component.translatable("field.xaeroregionsrev.recent_colors"),
+                layout.controlsLeft(), palette.recentY() - 12, 0xFFFFCC66, false);
+        graphics.drawString(font, Component.translatable("field.xaeroregionsrev.favorite_colors"),
+                layout.controlsLeft(), palette.favoriteY() - 12, 0xFFFFCC66, false);
+        renderCurrentColorText(graphics, layout);
+    }
+
+    private void renderCurrentColorText(GuiGraphics graphics, ColorPickerModel.Layout layout) {
+        int x = layout.left() + 18;
+        int y = Math.min(layout.plateTop() + layout.plateDiameter() + 10, layout.top() + layout.height() - 42);
+        graphics.drawString(font, RegionColorParser.format(channels.toColor()), x + 38, y + 8, 0xFFE5E7EB, false);
     }
 
     private ColorPickerModel.Layout layout() {

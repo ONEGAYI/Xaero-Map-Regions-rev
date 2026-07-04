@@ -179,7 +179,8 @@ public final class RegionStyleEditScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics, mouseX, mouseY, partialTick);
+        super.render(graphics, mouseX, mouseY, partialTick);
+
         graphics.drawCenteredString(font, title, width / 2, Math.max(16, height / 2 - 102), 0xFFFFFFFF);
         int left = labelBox.getX();
         if (nameBox != null) {
@@ -191,7 +192,6 @@ public final class RegionStyleEditScreen extends Screen {
         if (errorMessage != null) {
             graphics.drawCenteredString(font, errorMessage, width / 2, labelColorBox.getY() + 26, 0xFFFF7777);
         }
-        super.render(graphics, mouseX, mouseY, partialTick);
         renderColorPickerIcon(graphics, fillColorPickerButton);
         renderColorPickerIcon(graphics, labelColorPickerButton);
     }
