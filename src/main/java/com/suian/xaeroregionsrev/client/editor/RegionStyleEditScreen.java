@@ -3,6 +3,7 @@ package com.suian.xaeroregionsrev.client.editor;
 import com.suian.xaeroregionsrev.XaeroRegionsRev;
 import com.suian.xaeroregionsrev.network.RegionNetwork;
 import com.suian.xaeroregionsrev.network.payload.CreateRegionRequestPacket;
+import com.suian.xaeroregionsrev.network.payload.RegionEditResultPacket;
 import com.suian.xaeroregionsrev.network.payload.UpdateRegionStyleRequestPacket;
 import com.suian.xaeroregionsrev.region.ArgbColor;
 import com.suian.xaeroregionsrev.region.Region;
@@ -10,6 +11,7 @@ import com.suian.xaeroregionsrev.region.RegionColorParser;
 import com.suian.xaeroregionsrev.region.RegionLimits;
 import com.suian.xaeroregionsrev.region.RegionPoint;
 import com.suian.xaeroregionsrev.region.RegionRequestValidator;
+import net.minecraft.Util;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -25,6 +27,7 @@ public final class RegionStyleEditScreen extends Screen {
     private static final int COLOR_PICKER_BUTTON_WIDTH = 36;
     private static final int COLOR_PICKER_BUTTON_GAP = 6;
     private static final int COLOR_PICKER_ICON_SIZE = 16;
+    private static long nextRequestId = 1L;
     private static final ResourceLocation COLOR_PICKER_ICON = new ResourceLocation(
             XaeroRegionsRev.MOD_ID, "textures/gui/color_palette_icon.png");
     private final Screen previous;
@@ -36,10 +39,12 @@ public final class RegionStyleEditScreen extends Screen {
     private EditBox labelBox;
     private EditBox fillColorBox;
     private EditBox labelColorBox;
+    private Button saveButton;
     private Button fillColorPickerButton;
     private Button labelColorPickerButton;
     private Component errorMessage;
     private FormText formTextOverride;
+    private final RegionSubmissionState submissionState = new RegionSubmissionState();
 
     private RegionStyleEditScreen(Screen previous, Region region, RegionContextMenu.Command editCommand,
                                   List<RegionPoint> draftPoints, Runnable afterSave) {
@@ -163,7 +168,7 @@ public final class RegionStyleEditScreen extends Screen {
                 .bounds(colorPickerButtonX(left), labelColorBox.getY(), COLOR_PICKER_BUTTON_WIDTH, 20)
                 .build());
         labelColorPickerButton.active = region == null || editCommand == RegionContextMenu.Command.EDIT;
-        addRenderableWidget(Button.builder(Component.translatable("button.xaeroregionsrev.save"), button -> save())
+        saveButton = addRenderableWidget(Button.builder(Component.translatable("button.xaeroregionsrev.save"), button -> save())
                 .bounds(left, top + 114 + row, 104, 20)
                 .build());
         addRenderableWidget(Button.builder(Component.translatable("button.xaeroregionsrev.cancel"), button -> minecraft.setScreen(previous))
@@ -192,12 +197,32 @@ public final class RegionStyleEditScreen extends Screen {
     }
 
     @Override
+    public void tick() {
+        switch (submissionState.tick(nowMillis())) {
+            case TIMEOUT -> {
+                Component message = Component.translatable("message.xaeroregionsrev.edit_timeout");
+                errorMessage = message;
+                showActionBar(message);
+                updateSaveButton();
+            }
+            case RESTORE_AFTER_FAILURE -> updateSaveButton();
+            case NONE -> {
+            }
+        }
+        super.tick();
+    }
+
+    @Override
     public void onClose() {
         minecraft.setScreen(previous);
     }
 
     private void save() {
+        if (!submissionState.canSubmit(nowMillis())) {
+            return;
+        }
         try {
+            long requestId = nextRequestId();
             if (region == null) {
                 CreateValues values = createValues(
                         labelBox.getValue(),
@@ -205,9 +230,9 @@ public final class RegionStyleEditScreen extends Screen {
                         labelColorBox.getValue(),
                         draftPoints
                 );
+                submit(requestId);
                 RegionNetwork.CHANNEL.sendToServer(new CreateRegionRequestPacket(
-                        values.name(), values.fillColor(), values.label(), values.labelColor(), values.points()));
-                afterSave.run();
+                        requestId, values.name(), values.fillColor(), values.label(), values.labelColor(), values.points()));
             } else {
                 StyleValues values = updateValues(
                         region,
@@ -216,13 +241,59 @@ public final class RegionStyleEditScreen extends Screen {
                         labelBox.getValue(),
                         labelColorBox.getValue()
                 );
+                submit(requestId);
                 RegionNetwork.CHANNEL.sendToServer(new UpdateRegionStyleRequestPacket(
-                        region.id(), values.fillColor(), values.label(), values.labelColor()));
+                        requestId, region.id(), values.fillColor(), values.label(), values.labelColor()));
             }
-            minecraft.setScreen(previous);
         } catch (RuntimeException exception) {
             errorMessage = Component.literal(exception.getMessage());
         }
+    }
+
+    public void handleEditResult(RegionEditResultPacket packet) {
+        RegionSubmissionState.ResultAction action = submissionState.receive(packet, nowMillis());
+        if (action == RegionSubmissionState.ResultAction.IGNORED) {
+            return;
+        }
+        Component message = Component.literal(packet.message());
+        showActionBar(message);
+        if (action == RegionSubmissionState.ResultAction.CLOSE_SCREEN) {
+            afterSave.run();
+            minecraft.setScreen(previous);
+            return;
+        }
+        errorMessage = message;
+        updateSaveButton();
+    }
+
+    private void submit(long requestId) {
+        submissionState.submit(requestId, nowMillis());
+        errorMessage = null;
+        updateSaveButton();
+    }
+
+    private void updateSaveButton() {
+        if (saveButton == null) {
+            return;
+        }
+        saveButton.active = submissionState.canSubmit(nowMillis());
+        saveButton.setMessage(Component.translatable(submissionState.isPending()
+                ? "button.xaeroregionsrev.submitted"
+                : "button.xaeroregionsrev.save"));
+    }
+
+    private void showActionBar(Component message) {
+        if (minecraft.player != null) {
+            minecraft.player.displayClientMessage(message, true);
+        }
+    }
+
+    private static long nextRequestId() {
+        return nextRequestId++;
+    }
+
+    private static long nowMillis() {
+        return Util.getMillis();
     }
 
     private void applyEditMode() {

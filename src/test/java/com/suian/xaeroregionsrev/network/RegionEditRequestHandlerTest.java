@@ -9,6 +9,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RegionEditRequestHandlerTest {
     @Test
+    void editErrorsUseActionBarOverlay() {
+        assertTrue(RegionEditRequestHandler.editErrorsUseActionBar());
+    }
+
+    @Test
     void refreshRequestsAreRateLimitedPerPlayer() {
         UUID player = UUID.randomUUID();
 

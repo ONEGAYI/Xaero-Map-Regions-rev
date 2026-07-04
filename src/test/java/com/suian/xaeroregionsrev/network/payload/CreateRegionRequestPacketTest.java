@@ -16,6 +16,7 @@ class CreateRegionRequestPacketTest {
     @Test
     void encodesAndDecodesRequest() {
         var packet = new CreateRegionRequestPacket(
+                42L,
                 "Spawn",
                 new ArgbColor(0x8800FF00),
                 "Spawn Label",
@@ -28,12 +29,14 @@ class CreateRegionRequestPacketTest {
         var decoded = CreateRegionRequestPacket.decode(buffer);
 
         assertEquals(packet, decoded);
+        assertEquals(42L, decoded.requestId());
     }
 
     @Test
     void decodeRejectsTooLongNameAndLabel() {
         assertThrows(RuntimeException.class, () -> {
             var buffer = new FriendlyByteBuf(Unpooled.buffer());
+            buffer.writeLong(1L);
             buffer.writeUtf("n".repeat(RegionLimits.MAX_NAME_LENGTH + 1));
             buffer.writeInt(0x8800FF00);
             buffer.writeUtf("Label");
@@ -46,6 +49,7 @@ class CreateRegionRequestPacketTest {
 
         assertThrows(RuntimeException.class, () -> {
             var buffer = new FriendlyByteBuf(Unpooled.buffer());
+            buffer.writeLong(1L);
             buffer.writeUtf("Name");
             buffer.writeInt(0x8800FF00);
             buffer.writeUtf("l".repeat(RegionLimits.MAX_LABEL_LENGTH + 1));
@@ -76,6 +80,7 @@ class CreateRegionRequestPacketTest {
 
     private static FriendlyByteBuf createHeader() {
         var buffer = new FriendlyByteBuf(Unpooled.buffer());
+        buffer.writeLong(1L);
         buffer.writeUtf("Spawn");
         buffer.writeInt(0x8800FF00);
         buffer.writeUtf("Spawn Label");

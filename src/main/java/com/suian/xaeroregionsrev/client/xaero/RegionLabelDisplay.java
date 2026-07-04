@@ -2,24 +2,52 @@ package com.suian.xaeroregionsrev.client.xaero;
 
 import com.suian.xaeroregionsrev.client.editor.RegionEditorOverlay;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.ToIntFunction;
 
 public final class RegionLabelDisplay {
-    private static final double INLINE_AREA_RATIO_THRESHOLD = 0.015D;
-    private static final double INLINE_ABSOLUTE_AREA_THRESHOLD = 8_000.0D;
+    private static final String ELLIPSIS = "\u2026";
+    private static final double EDGE_EPSILON = 0.001D;
 
     private RegionLabelDisplay() {
     }
 
-    public static boolean shouldRenderInlineLabel(List<RegionEditorOverlay.ScreenPoint> points,
-                                                  int screenWidth, int screenHeight) {
-        if (screenWidth <= 0 || screenHeight <= 0) {
-            return false;
+    public record InlineLabel(String text, int x, int y) {
+    }
+
+    public static Optional<InlineLabel> layoutInlineLabel(String label, List<RegionEditorOverlay.ScreenPoint> points,
+                                                          int textHeight, ToIntFunction<String> widthCalculator) {
+        if (label == null || label.isBlank() || points.size() < 3) {
+            return Optional.empty();
         }
-        double screenArea = (double) screenWidth * screenHeight;
-        double projectedArea = polygonArea(points);
-        return projectedArea >= INLINE_ABSOLUTE_AREA_THRESHOLD
-                || projectedArea / screenArea >= INLINE_AREA_RATIO_THRESHOLD;
+        RegionEditorOverlay.ScreenPoint anchor = RegionEditorOverlay.labelAnchor(points);
+        double halfHeight = Math.max(1, textHeight) / 2.0D;
+        double availableWidth = Double.POSITIVE_INFINITY;
+        double[] sampleYs = {
+                anchor.y() - halfHeight + EDGE_EPSILON,
+                anchor.y(),
+                anchor.y() + halfHeight - EDGE_EPSILON
+        };
+        for (double sampleY : sampleYs) {
+            Optional<Span> span = horizontalSpanContaining(points, anchor.x(), sampleY);
+            if (span.isEmpty()) {
+                return Optional.empty();
+            }
+            availableWidth = Math.min(availableWidth, span.get().width());
+        }
+        Optional<String> fittedText = fitText(label.strip(), (int) Math.floor(availableWidth), widthCalculator);
+        if (fittedText.isEmpty()) {
+            return Optional.empty();
+        }
+        String text = fittedText.get();
+        int textWidth = widthCalculator.applyAsInt(text);
+        return Optional.of(new InlineLabel(
+                text,
+                Math.round(anchor.x() - textWidth / 2.0F),
+                Math.round(anchor.y() - textHeight / 2.0F)
+        ));
     }
 
     public static boolean isHovered(List<RegionEditorOverlay.ScreenPoint> points, double mouseX, double mouseY) {
@@ -39,26 +67,55 @@ public final class RegionLabelDisplay {
         return inside;
     }
 
-    public static String truncate(String label, int maxVisibleCharacters) {
-        if (label == null || label.length() <= maxVisibleCharacters) {
-            return label;
+    private static Optional<String> fitText(String label, int maxWidth, ToIntFunction<String> widthCalculator) {
+        if (maxWidth <= 0) {
+            return Optional.empty();
         }
-        if (maxVisibleCharacters <= 0) {
-            return "...";
+        if (widthCalculator.applyAsInt(label) <= maxWidth) {
+            return Optional.of(label);
         }
-        return label.substring(0, maxVisibleCharacters).stripTrailing() + "...";
+        int[] codePoints = label.codePoints().toArray();
+        String shortest = new String(codePoints, 0, 1) + ELLIPSIS;
+        if (widthCalculator.applyAsInt(shortest) > maxWidth) {
+            return Optional.empty();
+        }
+        for (int visibleCodePoints = codePoints.length - 1; visibleCodePoints >= 1; visibleCodePoints--) {
+            String candidate = new String(codePoints, 0, visibleCodePoints).stripTrailing() + ELLIPSIS;
+            if (widthCalculator.applyAsInt(candidate) <= maxWidth) {
+                return Optional.of(candidate);
+            }
+        }
+        return Optional.of(shortest);
     }
 
-    private static double polygonArea(List<RegionEditorOverlay.ScreenPoint> points) {
-        if (points.size() < 3) {
-            return 0.0D;
-        }
-        double doubleArea = 0.0D;
+    private static Optional<Span> horizontalSpanContaining(List<RegionEditorOverlay.ScreenPoint> points,
+                                                           double anchorX, double sampleY) {
+        List<Double> intersections = new ArrayList<>();
         for (int index = 0; index < points.size(); index++) {
             RegionEditorOverlay.ScreenPoint current = points.get(index);
             RegionEditorOverlay.ScreenPoint next = points.get((index + 1) % points.size());
-            doubleArea += current.x() * next.y() - next.x() * current.y();
+            boolean crosses = (current.y() <= sampleY && next.y() > sampleY)
+                    || (next.y() <= sampleY && current.y() > sampleY);
+            if (!crosses) {
+                continue;
+            }
+            double ratio = (sampleY - current.y()) / (next.y() - current.y());
+            intersections.add(current.x() + ratio * (next.x() - current.x()));
         }
-        return Math.abs(doubleArea) / 2.0D;
+        intersections.sort(Double::compare);
+        for (int index = 0; index + 1 < intersections.size(); index += 2) {
+            double left = intersections.get(index);
+            double right = intersections.get(index + 1);
+            if (anchorX + EDGE_EPSILON >= left && anchorX - EDGE_EPSILON <= right) {
+                return Optional.of(new Span(left, right));
+            }
+        }
+        return Optional.empty();
+    }
+
+    private record Span(double left, double right) {
+        double width() {
+            return Math.max(0.0D, right - left);
+        }
     }
 }

@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Optional;
 
 public final class XaeroMapOverlayController {
-    private static final int MAX_INLINE_LABEL_CHARACTERS = 18;
     private static final RegionEditSession SESSION = new RegionEditSession();
     private static final XaeroMapInputRouter ROUTER = new XaeroMapInputRouter(SESSION);
     private static final MapProjectionAdapter PROJECTION = MapProjectionAdapter.shared();
@@ -182,20 +181,22 @@ public final class XaeroMapOverlayController {
         if (hovered) {
             graphics.renderTooltip(Minecraft.getInstance().font, Component.literal(region.label()), mouseX, mouseY);
         }
-        if (!RegionLabelDisplay.shouldRenderInlineLabel(points, screen.width, screen.height)) {
+        Optional<RegionLabelDisplay.InlineLabel> inlineLabel = RegionLabelDisplay.layoutInlineLabel(
+                region.label(), points, Minecraft.getInstance().font.lineHeight, Minecraft.getInstance().font::width);
+        if (inlineLabel.isEmpty()) {
             return;
         }
-        RegionEditorOverlay.ScreenPoint anchor = RegionEditorOverlay.labelAnchor(points);
-        if (anchor.x() < 0 || anchor.y() < 0 || anchor.x() > screen.width || anchor.y() > screen.height) {
+        RegionLabelDisplay.InlineLabel label = inlineLabel.get();
+        int labelWidth = Minecraft.getInstance().font.width(label.text());
+        if (label.x() + labelWidth < 0 || label.y() + Minecraft.getInstance().font.lineHeight < 0
+                || label.x() > screen.width || label.y() > screen.height) {
             return;
         }
-        String label = RegionLabelDisplay.truncate(region.label(), MAX_INLINE_LABEL_CHARACTERS);
-        int labelWidth = Minecraft.getInstance().font.width(label);
         graphics.drawString(
                 Minecraft.getInstance().font,
-                label,
-                Math.round(anchor.x() - labelWidth / 2.0F),
-                Math.round(anchor.y() - 4.0F),
+                label.text(),
+                label.x(),
+                label.y(),
                 region.labelColor().value(),
                 true
         );

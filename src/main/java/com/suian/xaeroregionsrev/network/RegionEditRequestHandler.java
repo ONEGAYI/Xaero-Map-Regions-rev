@@ -5,6 +5,7 @@ import com.suian.xaeroregionsrev.network.payload.ColorHistorySyncPacket;
 import com.suian.xaeroregionsrev.network.payload.ColorHistoryUpdateRequestPacket;
 import com.suian.xaeroregionsrev.network.payload.CreateRegionRequestPacket;
 import com.suian.xaeroregionsrev.network.payload.DeleteRegionRequestPacket;
+import com.suian.xaeroregionsrev.network.payload.RegionEditResultPacket;
 import com.suian.xaeroregionsrev.network.payload.RegionRefreshRequestPacket;
 import com.suian.xaeroregionsrev.network.payload.RegionSyncPacket;
 import com.suian.xaeroregionsrev.network.payload.UpdateRegionStyleRequestPacket;
@@ -32,6 +33,7 @@ public final class RegionEditRequestHandler {
     private static final RegionService SERVICE = new RegionService();
     private static final long REFRESH_COOLDOWN_NANOS = 2_000_000_000L;
     private static final Map<UUID, Long> LAST_REFRESH_BY_PLAYER = new HashMap<>();
+    private static final String PERMISSION_ERROR = "You must be an operator in creative mode to manage regions.";
 
     private RegionEditRequestHandler() {
     }
@@ -41,7 +43,7 @@ public final class RegionEditRequestHandler {
         context.enqueueWork(() -> {
             ServerPlayer sender = context.getSender();
             if (!canManage(sender)) {
-                sendPermissionError(sender);
+                sendEditFailure(sender, packet.requestId(), PERMISSION_ERROR);
                 return;
             }
             ServerLevel level = sender.serverLevel();
@@ -55,13 +57,13 @@ public final class RegionEditRequestHandler {
                         packet.points()
                 );
             } catch (IllegalArgumentException exception) {
-                sendError(sender, exception.getMessage());
+                sendEditFailure(sender, packet.requestId(), exception.getMessage());
                 return;
             }
 
             RegionId id = new RegionId(request.name());
             if (SERVICE.find(level, id).isPresent()) {
-                sendError(sender, "Region " + id.value() + " already exists.");
+                sendEditFailure(sender, packet.requestId(), "Region " + id.value() + " already exists.");
                 return;
             }
 
@@ -81,6 +83,7 @@ public final class RegionEditRequestHandler {
             );
             SERVICE.upsert(level, region);
             broadcastSnapshot(sender);
+            sendEditSuccess(sender, packet.requestId());
         });
         context.setPacketHandled(true);
     }
@@ -115,28 +118,32 @@ public final class RegionEditRequestHandler {
         context.enqueueWork(() -> {
             ServerPlayer sender = context.getSender();
             if (!canManage(sender)) {
-                sendPermissionError(sender);
+                sendEditFailure(sender, packet.requestId(), PERMISSION_ERROR);
                 return;
             }
             RegionRequestValidator.ValidatedRegionStyleRequest request;
             try {
                 request = RegionRequestValidator.validateStyle(packet.fillColor(), packet.label(), packet.labelColor());
             } catch (IllegalArgumentException exception) {
-                sendError(sender, exception.getMessage());
+                sendEditFailure(sender, packet.requestId(), exception.getMessage());
                 return;
             }
 
             ServerLevel level = sender.serverLevel();
-            RegionId id = parseRegionId(sender, packet.idText());
-            if (id == null) {
+            RegionId id;
+            try {
+                id = new RegionId(packet.idText());
+            } catch (IllegalArgumentException exception) {
+                sendEditFailure(sender, packet.requestId(), exception.getMessage());
                 return;
             }
             if (SERVICE.updateStyle(level, id, request.fillColor(), request.label(), request.labelColor(),
                     Instant.now().toEpochMilli()).isEmpty()) {
-                sendError(sender, "Region " + id.value() + " was not found.");
+                sendEditFailure(sender, packet.requestId(), "Region " + id.value() + " was not found.");
                 return;
             }
             broadcastSnapshot(sender);
+            sendEditSuccess(sender, packet.requestId());
         });
         context.setPacketHandled(true);
     }
@@ -186,14 +193,34 @@ public final class RegionEditRequestHandler {
         return sender != null && ForgePermissionAdapter.from(sender).canManageRegions();
     }
 
+    static boolean editErrorsUseActionBar() {
+        return true;
+    }
+
     private static void sendError(ServerPlayer player, String message) {
         if (player != null) {
-            player.sendSystemMessage(Component.literal(message));
+            player.displayClientMessage(Component.literal(message), editErrorsUseActionBar());
         }
     }
 
     private static void sendPermissionError(ServerPlayer player) {
-        sendError(player, "You must be an operator in creative mode to manage regions.");
+        sendError(player, PERMISSION_ERROR);
+    }
+
+    private static void sendEditSuccess(ServerPlayer player, long requestId) {
+        sendEditResult(player, requestId, true, true, "Region saved.");
+    }
+
+    private static void sendEditFailure(ServerPlayer player, long requestId, String message) {
+        sendEditResult(player, requestId, false, false, message);
+    }
+
+    private static void sendEditResult(ServerPlayer player, long requestId, boolean success, boolean closeScreen,
+                                       String message) {
+        if (player != null) {
+            RegionNetwork.sendEditResultToPlayer(player,
+                    new RegionEditResultPacket(requestId, success, closeScreen, message));
+        }
     }
 
     private static RegionId parseRegionId(ServerPlayer player, String idText) {

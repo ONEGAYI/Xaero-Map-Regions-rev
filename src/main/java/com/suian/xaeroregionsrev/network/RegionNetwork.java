@@ -8,9 +8,11 @@ import com.suian.xaeroregionsrev.network.payload.ColorHistorySyncPacket;
 import com.suian.xaeroregionsrev.network.payload.ColorHistoryUpdateRequestPacket;
 import com.suian.xaeroregionsrev.network.payload.CreateRegionRequestPacket;
 import com.suian.xaeroregionsrev.network.payload.DeleteRegionRequestPacket;
+import com.suian.xaeroregionsrev.network.payload.RegionEditResultPacket;
 import com.suian.xaeroregionsrev.network.payload.RegionRefreshRequestPacket;
 import com.suian.xaeroregionsrev.network.payload.RegionSyncPacket;
 import com.suian.xaeroregionsrev.network.payload.UpdateRegionStyleRequestPacket;
+import com.suian.xaeroregionsrev.client.ClientRegionEditResultHandler;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.api.distmarker.Dist;
@@ -23,7 +25,7 @@ import org.slf4j.Logger;
 
 public final class RegionNetwork {
     private static final Logger LOGGER = LogUtils.getLogger();
-    private static final String PROTOCOL_VERSION = "5";
+    private static final String PROTOCOL_VERSION = "6";
     public static final SimpleChannel CHANNEL = NetworkRegistry.ChannelBuilder
             .named(new ResourceLocation(XaeroRegionsRev.MOD_ID, "main"))
             .networkProtocolVersion(() -> PROTOCOL_VERSION)
@@ -62,6 +64,16 @@ public final class RegionNetwork {
                 })
                 .add();
 
+        CHANNEL.messageBuilder(RegionEditResultPacket.class, packetId++, NetworkDirection.PLAY_TO_CLIENT)
+                .encoder(RegionEditResultPacket::encode)
+                .decoder(RegionEditResultPacket::decode)
+                .consumerMainThread((packet, contextSupplier) -> {
+                    DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+                            () -> () -> ClientRegionEditResultHandler.handle(packet));
+                    contextSupplier.get().setPacketHandled(true);
+                })
+                .add();
+
         CHANNEL.messageBuilder(CreateRegionRequestPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
                 .encoder(CreateRegionRequestPacket::encode)
                 .decoder(CreateRegionRequestPacket::decode)
@@ -95,6 +107,10 @@ public final class RegionNetwork {
 
     public static void sendToPlayer(ServerPlayer player, RegionSyncPacket packet) {
         LOGGER.info("Sending {} region(s) to player {}.", packet.regions().size(), player.getGameProfile().getName());
+        CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), packet);
+    }
+
+    public static void sendEditResultToPlayer(ServerPlayer player, RegionEditResultPacket packet) {
         CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), packet);
     }
 

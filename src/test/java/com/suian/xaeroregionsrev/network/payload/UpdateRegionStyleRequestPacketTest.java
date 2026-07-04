@@ -14,6 +14,7 @@ class UpdateRegionStyleRequestPacketTest {
     @Test
     void encodesAndDecodesRequest() {
         var packet = new UpdateRegionStyleRequestPacket(
+                77L,
                 new RegionId("Spawn"),
                 new ArgbColor(0x8800FF00),
                 "Spawn Label",
@@ -25,12 +26,14 @@ class UpdateRegionStyleRequestPacketTest {
         var decoded = UpdateRegionStyleRequestPacket.decode(buffer);
 
         assertEquals(packet, decoded);
+        assertEquals(77L, decoded.requestId());
         assertEquals("spawn", decoded.id().value());
     }
 
     @Test
     void decodeAllowsBlankIdForHandlerValidation() {
         var buffer = new FriendlyByteBuf(Unpooled.buffer());
+        buffer.writeLong(1L);
         buffer.writeUtf(" ");
         buffer.writeInt(0x8800FF00);
         buffer.writeUtf("Label");
@@ -45,6 +48,7 @@ class UpdateRegionStyleRequestPacketTest {
     void decodeRejectsTooLongIdAndLabel() {
         assertThrows(RuntimeException.class, () -> {
             var buffer = new FriendlyByteBuf(Unpooled.buffer());
+            buffer.writeLong(1L);
             buffer.writeUtf("i".repeat(RegionLimits.MAX_NAME_LENGTH + 1));
             buffer.writeInt(0x8800FF00);
             buffer.writeUtf("Label");
@@ -55,6 +59,7 @@ class UpdateRegionStyleRequestPacketTest {
 
         assertThrows(RuntimeException.class, () -> {
             var buffer = new FriendlyByteBuf(Unpooled.buffer());
+            buffer.writeLong(1L);
             buffer.writeUtf("spawn");
             buffer.writeInt(0x8800FF00);
             buffer.writeUtf("l".repeat(RegionLimits.MAX_LABEL_LENGTH + 1));

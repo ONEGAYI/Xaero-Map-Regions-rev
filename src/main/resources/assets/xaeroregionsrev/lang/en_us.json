@@ -9,6 +9,7 @@
   "button.xaeroregionsrev.edit": "Edit",
   "button.xaeroregionsrev.done": "Done",
   "button.xaeroregionsrev.save": "Save",
+  "button.xaeroregionsrev.submitted": "Submitted",
   "button.xaeroregionsrev.cancel": "Cancel",
   "button.xaeroregionsrev.favorite_color": "Favorite",
   "button.xaeroregionsrev.refresh": "Refresh",
@@ -36,5 +37,6 @@
   "field.xaeroregionsrev.fill_color": "Fill Color",
   "field.xaeroregionsrev.label_color": "Label Color",
   "field.xaeroregionsrev.recent_colors": "Recent Colors",
-  "field.xaeroregionsrev.favorite_colors": "Favorite Colors"
+  "field.xaeroregionsrev.favorite_colors": "Favorite Colors",
+  "message.xaeroregionsrev.edit_timeout": "Region edit request timed out. Please try again."
 }

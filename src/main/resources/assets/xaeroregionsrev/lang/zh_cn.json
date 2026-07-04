@@ -9,6 +9,7 @@
   "button.xaeroregionsrev.edit": "编辑",
   "button.xaeroregionsrev.done": "完成",
   "button.xaeroregionsrev.save": "保存",
+  "button.xaeroregionsrev.submitted": "已提交",
   "button.xaeroregionsrev.cancel": "取消",
   "button.xaeroregionsrev.favorite_color": "收藏",
   "button.xaeroregionsrev.refresh": "刷新",
@@ -36,5 +37,6 @@
   "field.xaeroregionsrev.fill_color": "填充颜色",
   "field.xaeroregionsrev.label_color": "标签颜色",
   "field.xaeroregionsrev.recent_colors": "历史颜色",
-  "field.xaeroregionsrev.favorite_colors": "收藏颜色"
+  "field.xaeroregionsrev.favorite_colors": "收藏颜色",
+  "message.xaeroregionsrev.edit_timeout": "区域编辑请求超时，请重试"
 }
