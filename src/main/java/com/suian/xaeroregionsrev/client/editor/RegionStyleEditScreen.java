@@ -28,7 +28,7 @@ public final class RegionStyleEditScreen extends Screen {
     private static final int COLOR_PICKER_BUTTON_GAP = 6;
     private static final int COLOR_PICKER_ICON_SIZE = 16;
     private static long nextRequestId = 1L;
-    private static final ResourceLocation COLOR_PICKER_ICON = new ResourceLocation(
+    private static final ResourceLocation COLOR_PICKER_ICON = ResourceLocation.fromNamespaceAndPath(
             XaeroRegionsRev.MOD_ID, "textures/gui/color_palette_icon.png");
     private final Screen previous;
     private final Region region;
@@ -179,7 +179,7 @@ public final class RegionStyleEditScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics);
+        renderBackground(graphics, mouseX, mouseY, partialTick);
         graphics.drawCenteredString(font, title, width / 2, Math.max(16, height / 2 - 102), 0xFFFFFFFF);
         int left = labelBox.getX();
         if (nameBox != null) {
@@ -231,7 +231,7 @@ public final class RegionStyleEditScreen extends Screen {
                         draftPoints
                 );
                 submit(requestId);
-                RegionNetwork.CHANNEL.sendToServer(new CreateRegionRequestPacket(
+                RegionNetwork.sendToServer(new CreateRegionRequestPacket(
                         requestId, values.name(), values.fillColor(), values.label(), values.labelColor(), values.points()));
             } else {
                 StyleValues values = updateValues(
@@ -242,7 +242,7 @@ public final class RegionStyleEditScreen extends Screen {
                         labelColorBox.getValue()
                 );
                 submit(requestId);
-                RegionNetwork.CHANNEL.sendToServer(new UpdateRegionStyleRequestPacket(
+                RegionNetwork.sendToServer(new UpdateRegionStyleRequestPacket(
                         requestId, region.id(), values.fillColor(), values.label(), values.labelColor()));
             }
         } catch (RuntimeException exception) {

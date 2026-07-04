@@ -24,7 +24,7 @@ public final class RegionEditorOverlay {
     private static final int ICON_TEXTURE_HEIGHT = 16;
     private static final int EDIT_ICON_INDEX = 0;
     private static final int EXIT_EDIT_ICON_INDEX = 1;
-    private static final ResourceLocation ICONS_TEXTURE = new ResourceLocation(
+    private static final ResourceLocation ICONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(
             XaeroRegionsRev.MOD_ID, "textures/gui/region_editor_icons.png");
 
     private RegionEditorOverlay() {

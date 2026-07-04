@@ -11,6 +11,24 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class DeleteRegionRequestPacketTest {
     @Test
+    void exposesCustomPayloadType() {
+        var packet = new DeleteRegionRequestPacket(new RegionId("Spawn"));
+
+        assertEquals(DeleteRegionRequestPacket.TYPE, packet.type());
+    }
+
+    @Test
+    void streamCodecRoundTripsRequest() {
+        var packet = new DeleteRegionRequestPacket(new RegionId("Spawn"));
+        var buffer = new FriendlyByteBuf(Unpooled.buffer());
+
+        DeleteRegionRequestPacket.STREAM_CODEC.encode(buffer, packet);
+        var decoded = DeleteRegionRequestPacket.STREAM_CODEC.decode(buffer);
+
+        assertEquals(packet, decoded);
+    }
+
+    @Test
     void encodesAndDecodesRequest() {
         var packet = new DeleteRegionRequestPacket(new RegionId("Spawn"));
         var buffer = new FriendlyByteBuf(Unpooled.buffer());

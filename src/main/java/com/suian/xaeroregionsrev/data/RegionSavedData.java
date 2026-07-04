@@ -5,6 +5,7 @@ import com.suian.xaeroregionsrev.region.ArgbColor;
 import com.suian.xaeroregionsrev.region.Region;
 import com.suian.xaeroregionsrev.region.RegionId;
 import com.suian.xaeroregionsrev.region.RegionNbtCodec;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.IntTag;
 import net.minecraft.nbt.ListTag;
@@ -29,10 +30,11 @@ public final class RegionSavedData extends SavedData {
     private List<ArgbColor> colorHistory = List.of();
 
     public static RegionSavedData get(ServerLevel level) {
-        return level.getDataStorage().computeIfAbsent(RegionSavedData::load, RegionSavedData::new, DATA_NAME);
+        return level.getDataStorage().computeIfAbsent(
+                new SavedData.Factory<>(RegionSavedData::new, RegionSavedData::load), DATA_NAME);
     }
 
-    public static RegionSavedData load(CompoundTag tag) {
+    public static RegionSavedData load(CompoundTag tag, HolderLookup.Provider registries) {
         RegionSavedData data = new RegionSavedData();
         if (tag.contains(REGIONS_KEY) && !tag.contains(REGIONS_KEY, TAG_LIST)) {
             throw new IllegalArgumentException("Saved region data field 'regions' must be a list.");
@@ -59,7 +61,7 @@ public final class RegionSavedData extends SavedData {
     }
 
     @Override
-    public CompoundTag save(CompoundTag tag) {
+    public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
         ListTag list = new ListTag();
         for (Region region : regions.values()) {
             list.add(RegionNbtCodec.writeRegion(region));

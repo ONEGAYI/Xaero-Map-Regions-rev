@@ -7,8 +7,7 @@ import com.suian.xaeroregionsrev.region.Region;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraftforge.client.event.ScreenEvent;
-import net.minecraftforge.common.MinecraftForge;
+import net.neoforged.neoforge.client.event.ScreenEvent;
 import org.joml.Vector2f;
 import org.slf4j.Logger;
 
@@ -23,10 +22,6 @@ public final class XaeroMapOverlayRenderer {
     private static int lastLoggedRenderedRegions = -1;
 
     private XaeroMapOverlayRenderer() {
-    }
-
-    public static void register() {
-        MinecraftForge.EVENT_BUS.addListener(XaeroMapOverlayRenderer::onScreenRenderPost);
     }
 
     public static void onScreenRenderPost(ScreenEvent.Render.Post event) {

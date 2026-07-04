@@ -247,7 +247,7 @@ public final class XaeroMapOverlayController {
         if (command == RegionContextMenu.Command.DELETE) {
             Minecraft.getInstance().setScreen(new ConfirmScreen(confirmed -> {
                 if (confirmed) {
-                    RegionNetwork.CHANNEL.sendToServer(new DeleteRegionRequestPacket(regionId));
+                    RegionNetwork.sendToServer(new DeleteRegionRequestPacket(regionId));
                     SESSION.clearSelection();
                 }
                 Minecraft.getInstance().setScreen(previous);

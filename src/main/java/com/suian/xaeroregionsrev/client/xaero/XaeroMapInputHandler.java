@@ -6,7 +6,7 @@ import com.suian.xaeroregionsrev.client.editor.RegionEditorOverlay;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraftforge.client.event.ScreenEvent;
+import net.neoforged.neoforge.client.event.ScreenEvent;
 
 public final class XaeroMapInputHandler {
     private XaeroMapInputHandler() {

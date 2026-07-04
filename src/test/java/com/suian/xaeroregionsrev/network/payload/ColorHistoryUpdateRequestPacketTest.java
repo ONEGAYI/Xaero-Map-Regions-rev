@@ -9,6 +9,24 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ColorHistoryUpdateRequestPacketTest {
     @Test
+    void exposesCustomPayloadType() {
+        ColorHistoryUpdateRequestPacket packet = new ColorHistoryUpdateRequestPacket(new ArgbColor(0x80445566));
+
+        assertEquals(ColorHistoryUpdateRequestPacket.TYPE, packet.type());
+    }
+
+    @Test
+    void streamCodecRoundTripsSelectedColor() {
+        ColorHistoryUpdateRequestPacket packet = new ColorHistoryUpdateRequestPacket(new ArgbColor(0x80445566));
+        FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
+
+        ColorHistoryUpdateRequestPacket.STREAM_CODEC.encode(buffer, packet);
+        ColorHistoryUpdateRequestPacket decoded = ColorHistoryUpdateRequestPacket.STREAM_CODEC.decode(buffer);
+
+        assertEquals(packet, decoded);
+    }
+
+    @Test
     void encodesAndDecodesSelectedColor() {
         ColorHistoryUpdateRequestPacket packet = new ColorHistoryUpdateRequestPacket(new ArgbColor(0x80445566));
         FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());

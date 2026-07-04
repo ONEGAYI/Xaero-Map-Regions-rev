@@ -7,7 +7,7 @@ import com.mojang.logging.LogUtils;
 import com.suian.xaeroregionsrev.region.ArgbColor;
 import com.suian.xaeroregionsrev.region.ColorPaletteLimits;
 import com.suian.xaeroregionsrev.region.RegionColorParser;
-import net.minecraftforge.fml.loading.FMLPaths;
+import net.neoforged.fml.loading.FMLPaths;
 import org.slf4j.Logger;
 
 import java.io.IOException;

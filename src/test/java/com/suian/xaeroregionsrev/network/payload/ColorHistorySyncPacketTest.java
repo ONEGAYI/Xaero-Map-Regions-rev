@@ -13,11 +13,26 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ColorHistorySyncPacketTest {
     @Test
+    void exposesCustomPayloadType() {
+        ColorHistorySyncPacket packet = packet();
+
+        assertEquals(ColorHistorySyncPacket.TYPE, packet.type());
+    }
+
+    @Test
+    void streamCodecRoundTripsColors() {
+        ColorHistorySyncPacket packet = packet();
+        FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
+
+        ColorHistorySyncPacket.STREAM_CODEC.encode(buffer, packet);
+        ColorHistorySyncPacket decoded = ColorHistorySyncPacket.STREAM_CODEC.decode(buffer);
+
+        assertEquals(packet, decoded);
+    }
+
+    @Test
     void encodesAndDecodesColors() {
-        ColorHistorySyncPacket packet = new ColorHistorySyncPacket(List.of(
-                new ArgbColor(0xFF112233),
-                new ArgbColor(0x80445566)
-        ));
+        ColorHistorySyncPacket packet = packet();
         FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
 
         ColorHistorySyncPacket.encode(packet, buffer);
@@ -55,5 +70,12 @@ class ColorHistorySyncPacketTest {
 
         assertEquals("Color history count must be between 0 and "
                 + ColorHistorySyncPacket.MAX_COLORS + ".", exception.getMessage());
+    }
+
+    private static ColorHistorySyncPacket packet() {
+        return new ColorHistorySyncPacket(List.of(
+                new ArgbColor(0xFF112233),
+                new ArgbColor(0x80445566)
+        ));
     }
 }

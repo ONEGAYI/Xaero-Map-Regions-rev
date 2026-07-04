@@ -12,14 +12,26 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class UpdateRegionStyleRequestPacketTest {
     @Test
+    void exposesCustomPayloadType() {
+        var packet = packet();
+
+        assertEquals(UpdateRegionStyleRequestPacket.TYPE, packet.type());
+    }
+
+    @Test
+    void streamCodecRoundTripsRequest() {
+        var packet = packet();
+        var buffer = new FriendlyByteBuf(Unpooled.buffer());
+
+        UpdateRegionStyleRequestPacket.STREAM_CODEC.encode(buffer, packet);
+        var decoded = UpdateRegionStyleRequestPacket.STREAM_CODEC.decode(buffer);
+
+        assertEquals(packet, decoded);
+    }
+
+    @Test
     void encodesAndDecodesRequest() {
-        var packet = new UpdateRegionStyleRequestPacket(
-                77L,
-                new RegionId("Spawn"),
-                new ArgbColor(0x8800FF00),
-                "Spawn Label",
-                new ArgbColor(0xFFFFFFFF)
-        );
+        var packet = packet();
         var buffer = new FriendlyByteBuf(Unpooled.buffer());
 
         UpdateRegionStyleRequestPacket.encode(packet, buffer);
@@ -67,5 +79,15 @@ class UpdateRegionStyleRequestPacketTest {
 
             UpdateRegionStyleRequestPacket.decode(buffer);
         });
+    }
+
+    private static UpdateRegionStyleRequestPacket packet() {
+        return new UpdateRegionStyleRequestPacket(
+                77L,
+                new RegionId("Spawn"),
+                new ArgbColor(0x8800FF00),
+                "Spawn Label",
+                new ArgbColor(0xFFFFFFFF)
+        );
     }
 }

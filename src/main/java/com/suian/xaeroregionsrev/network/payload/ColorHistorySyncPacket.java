@@ -1,17 +1,33 @@
 package com.suian.xaeroregionsrev.network.payload;
 
+import com.suian.xaeroregionsrev.XaeroRegionsRev;
 import com.suian.xaeroregionsrev.region.ArgbColor;
 import com.suian.xaeroregionsrev.region.ColorPaletteLimits;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public record ColorHistorySyncPacket(List<ArgbColor> colors) {
+public record ColorHistorySyncPacket(List<ArgbColor> colors) implements CustomPacketPayload {
+    public static final Type<ColorHistorySyncPacket> TYPE = new Type<>(
+            ResourceLocation.fromNamespaceAndPath(XaeroRegionsRev.MOD_ID, "color_history_sync")
+    );
+    public static final StreamCodec<FriendlyByteBuf, ColorHistorySyncPacket> STREAM_CODEC = PacketCodecs.of(
+            ColorHistorySyncPacket::encode,
+            ColorHistorySyncPacket::decode
+    );
     public static final int MAX_COLORS = ColorPaletteLimits.MAX_COLORS;
 
     public ColorHistorySyncPacket {
         colors = List.copyOf(colors);
+    }
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
     public static void encode(ColorHistorySyncPacket packet, FriendlyByteBuf buffer) {

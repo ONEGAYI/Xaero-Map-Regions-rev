@@ -15,20 +15,26 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class RegionSyncPacketTest {
     @Test
+    void exposesCustomPayloadType() {
+        var packet = new RegionSyncPacket(List.of(region()));
+
+        assertEquals(RegionSyncPacket.TYPE, packet.type());
+    }
+
+    @Test
+    void streamCodecRoundTripsRegions() {
+        var packet = new RegionSyncPacket(List.of(region()));
+        var buffer = new FriendlyByteBuf(Unpooled.buffer());
+
+        RegionSyncPacket.STREAM_CODEC.encode(buffer, packet);
+        var decoded = RegionSyncPacket.STREAM_CODEC.decode(buffer);
+
+        assertEquals(packet, decoded);
+    }
+
+    @Test
     void encodesAndDecodesRegions() {
-        var region = new Region(
-                new RegionId("spawn"),
-                "Spawn",
-                "minecraft:overworld",
-                new ArgbColor(0x8800FF00),
-                "Spawn Label",
-                new ArgbColor(0xFFFFAA00),
-                "town",
-                "home",
-                List.of(new RegionPoint(0, 0), new RegionPoint(16, 0), new RegionPoint(16, 16)),
-                100L,
-                200L
-        );
+        var region = region();
         var packet = new RegionSyncPacket(List.of(region));
         var buffer = new FriendlyByteBuf(Unpooled.buffer());
 
@@ -158,6 +164,22 @@ class RegionSyncPacketTest {
         writePoints(buffer);
 
         assertThrows(RuntimeException.class, () -> RegionSyncPacket.decode(buffer));
+    }
+
+    private static Region region() {
+        return new Region(
+                new RegionId("spawn"),
+                "Spawn",
+                "minecraft:overworld",
+                new ArgbColor(0x8800FF00),
+                "Spawn Label",
+                new ArgbColor(0xFFFFAA00),
+                "town",
+                "home",
+                List.of(new RegionPoint(0, 0), new RegionPoint(16, 0), new RegionPoint(16, 16)),
+                100L,
+                200L
+        );
     }
 
     private static void writeRegionHeader(FriendlyByteBuf buffer) {

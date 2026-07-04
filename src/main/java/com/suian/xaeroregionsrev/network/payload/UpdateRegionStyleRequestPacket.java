@@ -1,9 +1,13 @@
 package com.suian.xaeroregionsrev.network.payload;
 
+import com.suian.xaeroregionsrev.XaeroRegionsRev;
 import com.suian.xaeroregionsrev.region.ArgbColor;
 import com.suian.xaeroregionsrev.region.RegionId;
 import com.suian.xaeroregionsrev.region.RegionLimits;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 
 public record UpdateRegionStyleRequestPacket(
         long requestId,
@@ -11,7 +15,15 @@ public record UpdateRegionStyleRequestPacket(
         ArgbColor fillColor,
         String label,
         ArgbColor labelColor
-) {
+) implements CustomPacketPayload {
+    public static final Type<UpdateRegionStyleRequestPacket> TYPE = new Type<>(
+            ResourceLocation.fromNamespaceAndPath(XaeroRegionsRev.MOD_ID, "update_region_style_request")
+    );
+    public static final StreamCodec<FriendlyByteBuf, UpdateRegionStyleRequestPacket> STREAM_CODEC = PacketCodecs.of(
+            UpdateRegionStyleRequestPacket::encode,
+            UpdateRegionStyleRequestPacket::decode
+    );
+
     public UpdateRegionStyleRequestPacket(String idText, ArgbColor fillColor, String label, ArgbColor labelColor) {
         this(0L, idText, fillColor, label, labelColor);
     }
@@ -23,6 +35,11 @@ public record UpdateRegionStyleRequestPacket(
     public UpdateRegionStyleRequestPacket(long requestId, RegionId id, ArgbColor fillColor, String label,
                                           ArgbColor labelColor) {
         this(requestId, id.value(), fillColor, label, labelColor);
+    }
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
     public static void encode(UpdateRegionStyleRequestPacket packet, FriendlyByteBuf buffer) {

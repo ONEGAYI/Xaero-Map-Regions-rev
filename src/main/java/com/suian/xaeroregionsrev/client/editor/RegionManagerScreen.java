@@ -74,7 +74,7 @@ public final class RegionManagerScreen extends Screen {
         ButtonBounds refreshBounds = buttonBounds(4);
         addRenderableWidget(Button.builder(Component.translatable("button.xaeroregionsrev.refresh"),
                         button -> {
-                            RegionNetwork.CHANNEL.sendToServer(new RegionRefreshRequestPacket());
+                            RegionNetwork.sendToServer(new RegionRefreshRequestPacket());
                             updateButtonState();
                         })
                 .bounds(refreshBounds.x(), refreshBounds.y(), refreshBounds.width(), refreshBounds.height())
@@ -88,7 +88,7 @@ public final class RegionManagerScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics);
+        renderBackground(graphics, mouseX, mouseY, partialTick);
         graphics.drawCenteredString(font, title, width / 2, 18, 0xFFFFFFFF);
         List<Region> regions = currentRegions();
         int pageSize = pageSize();
@@ -227,7 +227,7 @@ public final class RegionManagerScreen extends Screen {
     private void confirmDelete(Region region) {
         Minecraft.getInstance().setScreen(new ConfirmScreen(confirmed -> {
             if (confirmed) {
-                RegionNetwork.CHANNEL.sendToServer(new DeleteRegionRequestPacket(region.id()));
+                RegionNetwork.sendToServer(new DeleteRegionRequestPacket(region.id()));
                 selectedRegionId = null;
             }
             Minecraft.getInstance().setScreen(this);

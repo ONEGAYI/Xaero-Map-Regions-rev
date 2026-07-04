@@ -9,7 +9,7 @@ import com.suian.xaeroregionsrev.network.payload.RegionEditResultPacket;
 import com.suian.xaeroregionsrev.network.payload.RegionRefreshRequestPacket;
 import com.suian.xaeroregionsrev.network.payload.RegionSyncPacket;
 import com.suian.xaeroregionsrev.network.payload.UpdateRegionStyleRequestPacket;
-import com.suian.xaeroregionsrev.platform.ForgePermissionAdapter;
+import com.suian.xaeroregionsrev.platform.MinecraftPermissionAdapter;
 import com.suian.xaeroregionsrev.region.ColorPaletteLimits;
 import com.suian.xaeroregionsrev.region.Region;
 import com.suian.xaeroregionsrev.region.RegionId;
@@ -19,14 +19,14 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.world.entity.player.Player;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.slf4j.Logger;
 
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Supplier;
 
 public final class RegionEditRequestHandler {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -38,10 +38,9 @@ public final class RegionEditRequestHandler {
     private RegionEditRequestHandler() {
     }
 
-    public static void handleCreate(CreateRegionRequestPacket packet, Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context context = contextSupplier.get();
+    public static void handleCreate(CreateRegionRequestPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
-            ServerPlayer sender = context.getSender();
+            ServerPlayer sender = serverPlayer(context);
             if (!canManage(sender)) {
                 sendEditFailure(sender, packet.requestId(), PERMISSION_ERROR);
                 return;
@@ -85,13 +84,11 @@ public final class RegionEditRequestHandler {
             broadcastSnapshot(sender);
             sendEditSuccess(sender, packet.requestId());
         });
-        context.setPacketHandled(true);
     }
 
-    public static void handleDelete(DeleteRegionRequestPacket packet, Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context context = contextSupplier.get();
+    public static void handleDelete(DeleteRegionRequestPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
-            ServerPlayer sender = context.getSender();
+            ServerPlayer sender = serverPlayer(context);
             if (!canManage(sender)) {
                 sendPermissionError(sender);
                 return;
@@ -107,16 +104,14 @@ public final class RegionEditRequestHandler {
             }
             broadcastSnapshot(sender);
         });
-        context.setPacketHandled(true);
     }
 
     public static void handleUpdateStyle(
             UpdateRegionStyleRequestPacket packet,
-            Supplier<NetworkEvent.Context> contextSupplier
+            IPayloadContext context
     ) {
-        NetworkEvent.Context context = contextSupplier.get();
         context.enqueueWork(() -> {
-            ServerPlayer sender = context.getSender();
+            ServerPlayer sender = serverPlayer(context);
             if (!canManage(sender)) {
                 sendEditFailure(sender, packet.requestId(), PERMISSION_ERROR);
                 return;
@@ -145,13 +140,11 @@ public final class RegionEditRequestHandler {
             broadcastSnapshot(sender);
             sendEditSuccess(sender, packet.requestId());
         });
-        context.setPacketHandled(true);
     }
 
-    public static void handleRefresh(RegionRefreshRequestPacket packet, Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context context = contextSupplier.get();
+    public static void handleRefresh(RegionRefreshRequestPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
-            ServerPlayer sender = context.getSender();
+            ServerPlayer sender = serverPlayer(context);
             if (sender == null) {
                 return;
             }
@@ -165,16 +158,14 @@ public final class RegionEditRequestHandler {
                 RegionNetwork.sendColorHistoryToPlayer(sender, new ColorHistorySyncPacket(SERVICE.colorHistory(server)));
             }
         });
-        context.setPacketHandled(true);
     }
 
     public static void handleRememberColor(
             ColorHistoryUpdateRequestPacket packet,
-            Supplier<NetworkEvent.Context> contextSupplier
+            IPayloadContext context
     ) {
-        NetworkEvent.Context context = contextSupplier.get();
         context.enqueueWork(() -> {
-            ServerPlayer sender = context.getSender();
+            ServerPlayer sender = serverPlayer(context);
             if (!canManage(sender)) {
                 sendPermissionError(sender);
                 return;
@@ -186,11 +177,15 @@ public final class RegionEditRequestHandler {
                 ));
             }
         });
-        context.setPacketHandled(true);
+    }
+
+    private static ServerPlayer serverPlayer(IPayloadContext context) {
+        Player player = context.player();
+        return player instanceof ServerPlayer serverPlayer ? serverPlayer : null;
     }
 
     private static boolean canManage(ServerPlayer sender) {
-        return sender != null && ForgePermissionAdapter.from(sender).canManageRegions();
+        return sender != null && MinecraftPermissionAdapter.from(sender).canManageRegions();
     }
 
     static boolean editErrorsUseActionBar() {

@@ -5,7 +5,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.suian.xaeroregionsrev.network.RegionNetwork;
 import com.suian.xaeroregionsrev.network.payload.RegionSyncPacket;
-import com.suian.xaeroregionsrev.platform.ForgePermissionAdapter;
+import com.suian.xaeroregionsrev.platform.MinecraftPermissionAdapter;
 import com.suian.xaeroregionsrev.region.ArgbColor;
 import com.suian.xaeroregionsrev.region.Region;
 import com.suian.xaeroregionsrev.region.RegionColorParser;
@@ -18,7 +18,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -81,7 +81,7 @@ public final class RegionCommands {
     private static boolean canManage(CommandSourceStack source) {
         try {
             ServerPlayer player = source.getPlayerOrException();
-            return ForgePermissionAdapter.from(player).canManageRegions();
+            return MinecraftPermissionAdapter.from(player).canManageRegions();
         } catch (Exception ignored) {
             return false;
         }

@@ -8,10 +8,10 @@ import com.suian.xaeroregionsrev.client.xaero.XaeroMapOverlayRenderer;
 import com.suian.xaeroregionsrev.client.xaero.XaeroScreenDetector;
 import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
-import net.minecraftforge.client.event.ScreenEvent;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
+import net.neoforged.neoforge.client.event.ScreenEvent;
+import net.neoforged.neoforge.common.NeoForge;
 
 public final class XaeroRegionsClient {
     private static boolean registered;
@@ -19,17 +19,17 @@ public final class XaeroRegionsClient {
     private XaeroRegionsClient() {
     }
 
-    public static void register() {
+    public static void register(IEventBus modEventBus) {
         if (registered) {
             return;
         }
         registered = true;
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(RegionKeyMappings::register);
-        MinecraftForge.EVENT_BUS.addListener(XaeroMapOverlayRenderer::onScreenRenderPost);
-        MinecraftForge.EVENT_BUS.addListener(XaeroMapInputHandler::onKeyPressed);
-        MinecraftForge.EVENT_BUS.addListener(XaeroMapInputHandler::onMouseButtonPressed);
-        MinecraftForge.EVENT_BUS.addListener(XaeroRegionsClient::onScreenOpening);
-        MinecraftForge.EVENT_BUS.addListener(XaeroRegionsClient::onClientLoggingOut);
+        modEventBus.addListener(RegionKeyMappings::register);
+        NeoForge.EVENT_BUS.addListener(XaeroMapOverlayRenderer::onScreenRenderPost);
+        NeoForge.EVENT_BUS.addListener(XaeroMapInputHandler::onKeyPressed);
+        NeoForge.EVENT_BUS.addListener(XaeroMapInputHandler::onMouseButtonPressed);
+        NeoForge.EVENT_BUS.addListener(XaeroRegionsClient::onScreenOpening);
+        NeoForge.EVENT_BUS.addListener(XaeroRegionsClient::onClientLoggingOut);
     }
 
     private static void onScreenOpening(ScreenEvent.Opening event) {

@@ -14,15 +14,26 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class CreateRegionRequestPacketTest {
     @Test
+    void exposesCustomPayloadType() {
+        var packet = packet();
+
+        assertEquals(CreateRegionRequestPacket.TYPE, packet.type());
+    }
+
+    @Test
+    void streamCodecRoundTripsRequest() {
+        var packet = packet();
+        var buffer = new FriendlyByteBuf(Unpooled.buffer());
+
+        CreateRegionRequestPacket.STREAM_CODEC.encode(buffer, packet);
+        var decoded = CreateRegionRequestPacket.STREAM_CODEC.decode(buffer);
+
+        assertEquals(packet, decoded);
+    }
+
+    @Test
     void encodesAndDecodesRequest() {
-        var packet = new CreateRegionRequestPacket(
-                42L,
-                "Spawn",
-                new ArgbColor(0x8800FF00),
-                "Spawn Label",
-                new ArgbColor(0xFFFFFFFF),
-                points()
-        );
+        var packet = packet();
         var buffer = new FriendlyByteBuf(Unpooled.buffer());
 
         CreateRegionRequestPacket.encode(packet, buffer);
@@ -90,6 +101,17 @@ class CreateRegionRequestPacketTest {
 
     private static List<RegionPoint> points() {
         return List.of(new RegionPoint(0, 0), new RegionPoint(16, 0), new RegionPoint(16, 16));
+    }
+
+    private static CreateRegionRequestPacket packet() {
+        return new CreateRegionRequestPacket(
+                42L,
+                "Spawn",
+                new ArgbColor(0x8800FF00),
+                "Spawn Label",
+                new ArgbColor(0xFFFFFFFF),
+                points()
+        );
     }
 
     private static void writePoints(FriendlyByteBuf buffer) {

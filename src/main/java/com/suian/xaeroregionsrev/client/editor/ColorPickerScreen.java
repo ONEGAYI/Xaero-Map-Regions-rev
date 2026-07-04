@@ -86,7 +86,7 @@ public final class ColorPickerScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics);
+        renderBackground(graphics, mouseX, mouseY, partialTick);
         ColorPickerModel.Layout layout = layout();
         renderPanel(graphics);
         graphics.drawCenteredString(font, title, width / 2, layout.top() + 14, 0xFFFFFFFF);
@@ -170,7 +170,7 @@ public final class ColorPickerScreen extends Screen {
 
     private void save() {
         ArgbColor color = channels.toColor();
-        RegionNetwork.CHANNEL.sendToServer(new ColorHistoryUpdateRequestPacket(color));
+        RegionNetwork.sendToServer(new ColorHistoryUpdateRequestPacket(color));
         onSave.accept(color);
     }
 

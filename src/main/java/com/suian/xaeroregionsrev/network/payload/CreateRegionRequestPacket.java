@@ -1,9 +1,13 @@
 package com.suian.xaeroregionsrev.network.payload;
 
+import com.suian.xaeroregionsrev.XaeroRegionsRev;
 import com.suian.xaeroregionsrev.region.ArgbColor;
 import com.suian.xaeroregionsrev.region.RegionLimits;
 import com.suian.xaeroregionsrev.region.RegionPoint;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +19,15 @@ public record CreateRegionRequestPacket(
         String label,
         ArgbColor labelColor,
         List<RegionPoint> points
-) {
+) implements CustomPacketPayload {
+    public static final Type<CreateRegionRequestPacket> TYPE = new Type<>(
+            ResourceLocation.fromNamespaceAndPath(XaeroRegionsRev.MOD_ID, "create_region_request")
+    );
+    public static final StreamCodec<FriendlyByteBuf, CreateRegionRequestPacket> STREAM_CODEC = PacketCodecs.of(
+            CreateRegionRequestPacket::encode,
+            CreateRegionRequestPacket::decode
+    );
+
     public CreateRegionRequestPacket(String name, ArgbColor fillColor, String label, ArgbColor labelColor,
                                      List<RegionPoint> points) {
         this(0L, name, fillColor, label, labelColor, points);
@@ -23,6 +35,11 @@ public record CreateRegionRequestPacket(
 
     public CreateRegionRequestPacket {
         points = List.copyOf(points);
+    }
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
     public static void encode(CreateRegionRequestPacket packet, FriendlyByteBuf buffer) {

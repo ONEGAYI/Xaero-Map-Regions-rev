@@ -1,16 +1,27 @@
 package com.suian.xaeroregionsrev.network.payload;
 
+import com.suian.xaeroregionsrev.XaeroRegionsRev;
 import com.suian.xaeroregionsrev.region.ArgbColor;
 import com.suian.xaeroregionsrev.region.Region;
 import com.suian.xaeroregionsrev.region.RegionId;
 import com.suian.xaeroregionsrev.region.RegionLimits;
 import com.suian.xaeroregionsrev.region.RegionPoint;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public record RegionSyncPacket(List<Region> regions) {
+public record RegionSyncPacket(List<Region> regions) implements CustomPacketPayload {
+    public static final Type<RegionSyncPacket> TYPE = new Type<>(
+            ResourceLocation.fromNamespaceAndPath(XaeroRegionsRev.MOD_ID, "region_sync")
+    );
+    public static final StreamCodec<FriendlyByteBuf, RegionSyncPacket> STREAM_CODEC = PacketCodecs.of(
+            RegionSyncPacket::encode,
+            RegionSyncPacket::decode
+    );
     public static final int MAX_REGIONS = 4096;
     public static final int MAX_POINTS_PER_REGION = RegionLimits.MAX_POINTS_PER_REQUEST;
     public static final int MAX_TOTAL_POINTS = 8192;
@@ -21,6 +32,11 @@ public record RegionSyncPacket(List<Region> regions) {
 
     public RegionSyncPacket {
         regions = List.copyOf(regions);
+    }
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
     public static void encode(RegionSyncPacket packet, FriendlyByteBuf buffer) {
