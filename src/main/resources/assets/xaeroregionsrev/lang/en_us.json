@@ -38,5 +38,9 @@
   "field.xaeroregionsrev.label_color": "Label Color",
   "field.xaeroregionsrev.recent_colors": "Recent Colors",
   "field.xaeroregionsrev.favorite_colors": "Favorite Colors",
-  "message.xaeroregionsrev.edit_timeout": "Region edit request timed out. Please try again."
+  "message.xaeroregionsrev.edit_timeout": "Region edit request timed out. Please try again.",
+  "command.xaeroregionsrev.auto_calibrate.status": "Map auto-calibration: %s",
+  "command.xaeroregionsrev.auto_calibrate.set": "Map auto-calibration set to: %s",
+  "command.xaeroregionsrev.auto_calibrate.on": "Enabled",
+  "command.xaeroregionsrev.auto_calibrate.off": "Disabled"
 }

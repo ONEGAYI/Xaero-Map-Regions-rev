@@ -8,6 +8,14 @@
 
 暂无。
 
+## [0.1.5] - 2026-07-09
+
+这个版本为地图自动校准机制引入可配置开关，解决区域图形在相机移动时因校准精度误差导致的轻微左右抖动。自动校准默认关闭，需要时可通过客户端命令开启。
+
+### 新功能
+
+- 新增地图自动校准开关，默认关闭，避免校准精度误差导致的区域图形左右抖动；可通过 `/region autoCalibrate true|false` 热切换，或 `/region autoCalibrate` 查询当前状态。配置持久化到客户端 `config/xaero_map_region_rev/client.json`，重启后保持。
+
 ## [0.1.4] - 2026-07-09
 
 这是一个面向兼容性的修复版本。0.1.3 的 `neoforge.mods.toml` 把 NeoForge 运行时依赖下限与构建工具链版本耦合，要求 `21.1.235` 或以上，导致使用较低小版本（如 21.1.226）的整合包在 FML 阶段崩溃。本版本将下限放宽到代码实际依赖的最低 API 版本，与构建版本解耦。
@@ -104,6 +112,7 @@
 
 <!-- 变更链接 -->
 
+[0.1.5]: https://github.com/ONEGAYI/Xaero-Map-Regions-rev/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/ONEGAYI/Xaero-Map-Regions-rev/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/ONEGAYI/Xaero-Map-Regions-rev/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/ONEGAYI/Xaero-Map-Regions-rev/compare/v0.1.1...v0.1.2

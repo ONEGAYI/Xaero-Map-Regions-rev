@@ -1,7 +1,9 @@
 package com.suian.xaeroregionsrev.client;
 
+import com.suian.xaeroregionsrev.client.command.RegionClientCommands;
 import com.suian.xaeroregionsrev.client.editor.RegionManagerScreen;
 import com.suian.xaeroregionsrev.client.editor.RegionStyleEditScreen;
+import com.suian.xaeroregionsrev.client.xaero.MapProjectionAdapter;
 import com.suian.xaeroregionsrev.client.xaero.XaeroMapInputHandler;
 import com.suian.xaeroregionsrev.client.xaero.XaeroMapOverlayController;
 import com.suian.xaeroregionsrev.client.xaero.XaeroMapOverlayRenderer;
@@ -30,6 +32,8 @@ public final class XaeroRegionsClient {
         NeoForge.EVENT_BUS.addListener(XaeroMapInputHandler::onMouseButtonPressed);
         NeoForge.EVENT_BUS.addListener(XaeroRegionsClient::onScreenOpening);
         NeoForge.EVENT_BUS.addListener(XaeroRegionsClient::onClientLoggingOut);
+        NeoForge.EVENT_BUS.addListener(RegionClientCommands::register);
+        MapProjectionAdapter.shared().syncCalibrationEnabledFromConfig();
     }
 
     private static void onScreenOpening(ScreenEvent.Opening event) {

@@ -38,5 +38,9 @@
   "field.xaeroregionsrev.label_color": "标签颜色",
   "field.xaeroregionsrev.recent_colors": "历史颜色",
   "field.xaeroregionsrev.favorite_colors": "收藏颜色",
-  "message.xaeroregionsrev.edit_timeout": "区域编辑请求超时，请重试"
+  "message.xaeroregionsrev.edit_timeout": "区域编辑请求超时，请重试",
+  "command.xaeroregionsrev.auto_calibrate.status": "地图自动校准：%s",
+  "command.xaeroregionsrev.auto_calibrate.set": "已将地图自动校准切换为：%s",
+  "command.xaeroregionsrev.auto_calibrate.on": "已开启",
+  "command.xaeroregionsrev.auto_calibrate.off": "已关闭"
 }
