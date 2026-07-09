@@ -1,7 +1,11 @@
-package com.suian.xaeroregionsrev.region;
+package com.suian.xaeroregionsrev.region.nbt;
 
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
+import com.suian.xaeroregionsrev.region.ArgbColor;
+import com.suian.xaeroregionsrev.region.PolygonMath;
+import com.suian.xaeroregionsrev.region.Region;
+import com.suian.xaeroregionsrev.region.RegionId;
+import com.suian.xaeroregionsrev.region.RegionLimits;
+import com.suian.xaeroregionsrev.region.RegionPoint;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -9,19 +13,13 @@ import java.util.List;
 import java.util.Objects;
 
 public final class RegionNbtCodec {
-    private static final int TAG_INT = 3;
-    private static final int TAG_LONG = 4;
-    private static final int TAG_STRING = 8;
-    private static final int TAG_LIST = 9;
-    private static final int TAG_COMPOUND = 10;
-
     private RegionNbtCodec() {
     }
 
-    public static CompoundTag writeRegion(Region region) {
+    public static NbtCompound writeRegion(NbtFactory factory, Region region) {
         Objects.requireNonNull(region, "Region cannot be null.");
 
-        CompoundTag tag = new CompoundTag();
+        NbtCompound tag = factory.createCompound();
         tag.putString("id", region.id().value());
         tag.putString("name", region.name());
         tag.putString("dimension", region.dimension());
@@ -33,9 +31,9 @@ public final class RegionNbtCodec {
         tag.putLong("createdAt", region.createdAt());
         tag.putLong("updatedAt", region.updatedAt());
 
-        ListTag points = new ListTag();
+        NbtList points = factory.createList();
         for (RegionPoint point : region.points()) {
-            CompoundTag pointTag = new CompoundTag();
+            NbtCompound pointTag = factory.createCompound();
             pointTag.putInt("x", point.x());
             pointTag.putInt("z", point.z());
             points.add(pointTag);
@@ -44,28 +42,28 @@ public final class RegionNbtCodec {
         return tag;
     }
 
-    public static Region readRegion(CompoundTag tag) {
+    public static Region readRegion(NbtCompound tag) {
         Objects.requireNonNull(tag, "Region tag cannot be null.");
-        requireField(tag, "id", TAG_STRING);
-        requireField(tag, "name", TAG_STRING);
-        requireField(tag, "dimension", TAG_STRING);
-        requireField(tag, "color", TAG_INT);
-        requireField(tag, "category", TAG_STRING);
-        requireField(tag, "iconName", TAG_STRING);
-        requireField(tag, "createdAt", TAG_LONG);
-        requireField(tag, "updatedAt", TAG_LONG);
-        requireField(tag, "points", TAG_LIST);
+        requireField(tag, "id", NbtCompound.TAG_STRING);
+        requireField(tag, "name", NbtCompound.TAG_STRING);
+        requireField(tag, "dimension", NbtCompound.TAG_STRING);
+        requireField(tag, "color", NbtCompound.TAG_INT);
+        requireField(tag, "category", NbtCompound.TAG_STRING);
+        requireField(tag, "iconName", NbtCompound.TAG_STRING);
+        requireField(tag, "createdAt", NbtCompound.TAG_LONG);
+        requireField(tag, "updatedAt", NbtCompound.TAG_LONG);
+        requireField(tag, "points", NbtCompound.TAG_LIST);
 
         List<RegionPoint> points = new ArrayList<>();
-        ListTag pointTags = tag.getList("points", TAG_COMPOUND);
+        NbtList pointTags = tag.getList("points", NbtCompound.TAG_COMPOUND);
         if (pointTags.size() > RegionLimits.MAX_POINTS_PER_REQUEST) {
             throw new IllegalArgumentException("Region point count cannot exceed "
                     + RegionLimits.MAX_POINTS_PER_REQUEST + ".");
         }
         for (int i = 0; i < pointTags.size(); i++) {
-            CompoundTag pointTag = pointTags.getCompound(i);
-            requireField(pointTag, "x", TAG_INT);
-            requireField(pointTag, "z", TAG_INT);
+            NbtCompound pointTag = pointTags.getCompound(i);
+            requireField(pointTag, "x", NbtCompound.TAG_INT);
+            requireField(pointTag, "z", NbtCompound.TAG_INT);
             points.add(new RegionPoint(pointTag.getInt("x"), pointTag.getInt("z")));
         }
         if (!PolygonMath.isValidPolygon(points)) {
@@ -75,7 +73,7 @@ public final class RegionNbtCodec {
         String id = boundedString(tag, "id", RegionLimits.MAX_ID_LENGTH);
         String name = boundedString(tag, "name", RegionLimits.MAX_NAME_LENGTH);
         String dimension = boundedString(tag, "dimension", RegionLimits.MAX_DIMENSION_LENGTH);
-        String label = tag.contains("label", TAG_STRING)
+        String label = tag.contains("label", NbtCompound.TAG_STRING)
                 ? boundedString(tag, "label", RegionLimits.MAX_LABEL_LENGTH)
                 : name;
         String category = boundedString(tag, "category", RegionLimits.MAX_CATEGORY_LENGTH);
@@ -87,7 +85,7 @@ public final class RegionNbtCodec {
                 dimension,
                 new ArgbColor(tag.getInt("color")),
                 label,
-                tag.contains("labelColor", TAG_INT) ? new ArgbColor(tag.getInt("labelColor")) : new ArgbColor(0xFFFFFFFF),
+                tag.contains("labelColor", NbtCompound.TAG_INT) ? new ArgbColor(tag.getInt("labelColor")) : new ArgbColor(0xFFFFFFFF),
                 category,
                 iconName,
                 points,
@@ -96,13 +94,13 @@ public final class RegionNbtCodec {
         );
     }
 
-    private static void requireField(CompoundTag tag, String key, int type) {
+    private static void requireField(NbtCompound tag, String key, int type) {
         if (!tag.contains(key, type)) {
             throw new IllegalArgumentException("Missing or invalid region NBT field: " + key);
         }
     }
 
-    private static String boundedString(CompoundTag tag, String key, int maxBytes) {
+    private static String boundedString(NbtCompound tag, String key, int maxBytes) {
         String value = tag.getString(key);
         if (value.getBytes(StandardCharsets.UTF_8).length > maxBytes) {
             throw new IllegalArgumentException("Saved region NBT field '" + key
