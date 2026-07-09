@@ -1,13 +1,13 @@
 package com.suian.xaeroregionsrev.client;
 
-import com.mojang.logging.LogUtils;
 import com.suian.xaeroregionsrev.region.ArgbColor;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
 public final class ClientColorHistoryCache {
-    private static final Logger LOGGER = LogUtils.getLogger();
+    private static final Logger LOGGER = LoggerFactory.getLogger(ClientColorHistoryCache.class);
     private static List<ArgbColor> colors = List.of();
 
     private ClientColorHistoryCache() {
