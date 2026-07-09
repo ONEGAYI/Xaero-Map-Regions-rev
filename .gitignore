@@ -17,3 +17,6 @@ logs/
 .project
 .settings/
 .vscode
+.serena
+.eclipse
+.zcode
