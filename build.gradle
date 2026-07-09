@@ -129,6 +129,7 @@ tasks.named('processResources', ProcessResources).configure {
             minecraft_version      : minecraft_version,
             minecraft_version_range: minecraft_version_range,
             neo_version            : neo_version,
+            neo_version_range      : neo_version_range,
             loader_version_range   : loader_version_range,
             xaero_world_map_version_range: xaero_world_map_version_range,
             mod_id                 : mod_id,

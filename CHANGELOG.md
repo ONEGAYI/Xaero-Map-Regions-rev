@@ -8,6 +8,14 @@
 
 暂无。
 
+## [0.1.4] - 2026-07-09
+
+这是一个面向兼容性的修复版本。0.1.3 的 `neoforge.mods.toml` 把 NeoForge 运行时依赖下限与构建工具链版本耦合，要求 `21.1.235` 或以上，导致使用较低小版本（如 21.1.226）的整合包在 FML 阶段崩溃。本版本将下限放宽到代码实际依赖的最低 API 版本，与构建版本解耦。
+
+### Bug 修复
+
+- 放宽 NeoForge 运行时依赖下限：`neoforge.mods.toml` 此前把运行时下限与构建工具链版本耦合（要求 `21.1.235` 或以上），导致使用较低小版本（如 21.1.226）的整合包在 FML 阶段崩溃。改为独立的 `neo_version_range` 属性，下限放宽到 `21.1.0`（代码实际用到的 API 自该版本起稳定），与构建版本解耦。
+
 ## [0.1.3] - 2026-07-04
 
 这是一个面向 NeoForge 1.21.1 主线的迁移与修复版本。主线现在以 NeoForge 1.21.1 作为主要维护目标，并保留 Forge 1.20.1 历史分支；同时修复了迁移后的服务端加载边界、异常存档边界和表单文字模糊问题。
@@ -96,6 +104,7 @@
 
 <!-- 变更链接 -->
 
+[0.1.4]: https://github.com/ONEGAYI/Xaero-Map-Regions-rev/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/ONEGAYI/Xaero-Map-Regions-rev/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/ONEGAYI/Xaero-Map-Regions-rev/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/ONEGAYI/Xaero-Map-Regions-rev/compare/v0.1.0...v0.1.1

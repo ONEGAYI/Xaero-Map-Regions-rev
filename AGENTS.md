@@ -8,6 +8,7 @@
 
 - 目标版本：Minecraft 1.21.1 + NeoForge 21.1.235。
 - 向上兼容：Minecraft、NeoForge 与 Xaero 版本号集中放在构建属性中；加载器与 Xaero 接入细节集中在适配层，业务逻辑不直接散落依赖版本细节。
+- 版本范围解耦：`gradle.properties` 的 `neo_version` 是 ModDevGradle 构建工具链版本，`neo_version_range` 才是 `neoforge.mods.toml` 声明的运行时最低兼容下限。两者分开维护，避免把构建版本误写为运行时要求；代码实际依赖的 API 最低可兼容到 `neo_version_range` 下限（当前 `21.1.0`），下调前须确认未使用该版本之后才引入的 API。
 - 主要语言：Java。
 - Java 版本：Java 21。
 - Xaero's World Map 与 IMBlocker 作为开发运行期客户端依赖使用，不打包进本项目产物；`runClient` 通过 Maven 仓库自动下载外部模组。
