@@ -20,3 +20,11 @@ logs/
 .serena
 .eclipse
 .zcode
+
+# Platform run directories
+neoforge/mc-1.21.1/run/
+neoforge/mc-1.21.1/run-client/
+neoforge/mc-1.21.1/run-server/
+neoforge/mc-1.21.1/run-data/
+forge/mc-1.20.1/run/
+forge/mc-1.20.1/run-data/
