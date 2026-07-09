@@ -1,0 +1,19 @@
+// gradle/region-platform.gradle
+// 平台子项目共享逻辑：jar manifest 模板
+// bump 任务不在此处注册（在根 build.gradle 统一注册，避免子项目并行冲突）
+
+apply from: "$rootDir/gradle/region-repositories.gradle"
+
+tasks.named('jar', Jar).configure {
+    manifest {
+        attributes([
+                'Specification-Title'     : mod_id,
+                'Specification-Vendor'    : mod_authors,
+                'Specification-Version'   : '1',
+                'Implementation-Title'    : project.name,
+                'Implementation-Version'  : project.jar.archiveVersion,
+                'Implementation-Vendor'   : mod_authors,
+                'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
+    }
+}
