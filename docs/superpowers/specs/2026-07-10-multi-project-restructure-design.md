@@ -29,13 +29,11 @@
 ```text
 Xaero-Map-Regions-rev/
 ├── settings.gradle              # include 'common', 'neoforge:mc-1.21.1', 'forge:mc-1.20.1'
-├── build.gradle                 # 根项目，仅全局配置（不 apply MC 插件）
+├── build.gradle                 # 根项目，仅全局配置 + bump 任务（不 apply MC 插件）
 ├── gradle.properties            # 全局共享属性（mod_version、mod_id、mod_name 等）
-├── buildSrc/
-│   ├── build.gradle             # convention 插件依赖
-│   └── src/main/groovy/
-│       ├── region-repositories.gradle     # 统一仓库声明（mavenCentral + Modrinth + CurseMaven）
-│       └── region-platform.gradle         # 平台共享逻辑（bump、jar manifest、processResources 模板）
+├── gradle/
+│   ├── region-repositories.gradle     # 统一仓库声明（mavenCentral + Modrinth + CurseMaven）
+│   └── region-platform.gradle         # 平台共享逻辑（jar manifest 模板）
 ├── common/
 │   ├── build.gradle             # apply java-library；Java 17
 │   └── src/
@@ -90,12 +88,13 @@ Xaero-Map-Regions-rev/
 | `RegionLimits.java` | master 版本 | 下沉 forge 缺少的 4 个常量（MAX_ID_LENGTH、MAX_DIMENSION_LENGTH、MAX_CATEGORY_LENGTH、MAX_ICON_NAME_LENGTH） |
 | `RegionNbtCodec.java` | master 版本 | 下沉 boundedString 校验逻辑；改用 NbtCompound/NbtList 接口 |
 
-**`region/nbt/` 包 — 2 个抽象接口（新建）**
+**`region/nbt/` 包 — 3 个抽象接口（新建）**
 
 | 文件 | 说明 |
 |------|------|
-| `NbtCompound.java` | 接口：put/getString/getIntArray/contains 等 RegionNbtCodec 用到的方法（约 10 个） |
-| `NbtList.java` | 接口：add/getCompound/size 等 RegionNbtCodec 用到的方法 |
+| `NbtCompound.java` | 接口：putString/getString/putInt/getInt/putLong/getLong/put/getList/contains/remove（10 个方法） |
+| `NbtList.java` | 接口：add/getCompound/size |
+| `NbtFactory.java` | 接口：createCompound/createList，供 writeRegion 创建 NBT 实例 |
 
 **`network/buffer/` 包 — 1 个抽象接口（新建）**
 
@@ -193,39 +192,50 @@ RegionLabelDisplay、RegionRenderStyle、XaeroMapInputRouter（零依赖）；Po
 
 ```java
 // common: network/buffer/PacketBuffer.java
+// 仅包含 8 个 payload 实际使用的方法（经源码逐行核对）
 public interface PacketBuffer {
-    void writeUtf(String value);
-    String readUtf();
+    void writeUtf(String value, int maxLength);
+    String readUtf(int maxLength);
     void writeInt(int value);
     int readInt();
-    void writeBoolean(boolean value);
-    boolean readBoolean();
     void writeLong(long value);
     long readLong();
-    void writeIntArray(int[] value);
-    int[] readIntArray();
-    // 其余 payload 实际使用的方法
+    void writeBoolean(boolean value);
+    boolean readBoolean();
+    void writeVarInt(int value);
+    int readVarInt();
 }
 ```
 
-平台实现 `FriendlyByteBufPacketBuffer` 包装 `FriendlyByteBuf`，逐方法委托。
+> 方法集经全部 8 个 payload 源码逐行核对，writeUtf/readUtf 均带 maxLength 参数，不含 writeIntArray/readIntArray（payload 用 writeVarInt + 循环 writeInt 代替）。
+
+平台实现 `FriendlyByteBufPacketBuffer` 包装 `FriendlyByteBuf`，逐方法委托。两端 FriendlyByteBuf 的这 10 个方法签名在 1.20.1 和 1.21.1 完全一致，适配器代码可共用接口定义。
 
 payload data record 的 encode/decode 签名改为操作 `PacketBuffer` 而非 `FriendlyByteBuf`。平台 wrapper 在注册 payload 时负责 `FriendlyByteBuf` ↔ `PacketBuffer` 的适配转换。
 
-### 4.3 NBT 层：NbtCompound / NbtList
+### 4.3 NBT 层：NbtCompound / NbtList / NbtFactory
 
 ```java
 // common: region/nbt/NbtCompound.java
+// 仅包含 RegionNbtCodec 及其测试实际使用的方法
 public interface NbtCompound {
     void putString(String key, String value);
     String getString(String key);
     void putInt(String key, int value);
     int getInt(String key);
-    void putIntArray(String key, int[] value);
-    int[] getIntArray(String key);
-    boolean contains(String key, int tagType);
-    NbtList getList(String key, int tagType);
-    // ...RegionNbtCodec 实际使用的方法
+    void putLong(String key, long value);
+    long getLong(String key);
+    void put(String key, NbtList list);
+    NbtList getList(String key, int type);
+    boolean contains(String key, int type);
+    void remove(String key);  // RegionNbtCodecTest 使用
+
+    // NBT type id 常量（与 Minecraft TagTags 对应）
+    int TAG_INT = 3;
+    int TAG_LONG = 4;
+    int TAG_STRING = 8;
+    int TAG_LIST = 9;
+    int TAG_COMPOUND = 10;
 }
 
 // common: region/nbt/NbtList.java
@@ -234,13 +244,28 @@ public interface NbtList {
     NbtCompound getCompound(int index);
     int size();
 }
+
+// common: region/nbt/NbtFactory.java
+// 用于 writeRegion 创建 NBT 实例，避免 common 直接 new MC 类
+public interface NbtFactory {
+    NbtCompound createCompound();
+    NbtList createList();
+}
 ```
 
-平台实现 `CompoundTagNbtCompound` 包装 `CompoundTag`，`ListTagNbtList` 包装 `ListTag`。
+> 方法集经 RegionNbtCodec 源码及其测试逐行核对。`remove` 方法仅在测试中使用（删除字段验证必填校验），但纳入接口以支持 common 测试。
 
-`RegionNbtCodec` 的 encode/decode 方法签名改为操作 `NbtCompound`/`NbtList`。平台子项目在 SavedData 中调用时负责 `CompoundTag` ↔ `NbtCompound` 的适配转换。
+平台实现 `CompoundTagNbtCompound` 包装 `CompoundTag`，`ListTagNbtList` 包装 `ListTag`，`CompoundTagNbtFactory` 实现 `NbtFactory`。
+
+适配器需提供 `raw()` 方法返回底层 MC 对象（`CompoundTag` 或 `ListTag`），供平台 `RegionSavedData` 在 `ListTag.add()` 等场景拆包。
+
+**视图语义约定：** `getList` 返回的是底层 `ListTag` 的**视图包装**（与原生 `CompoundTag.getList` 行为一致），修改会反映到底层，不做拷贝。
+
+`RegionNbtCodec` 的 `writeRegion` 签名改为 `writeRegion(NbtFactory factory, Region region)` 返回 `NbtCompound`；`readRegion(NbtCompound tag)` 不需要工厂参数。平台子项目在 SavedData 中调用时负责 `CompoundTag` ↔ `NbtCompound` 的适配转换。
 
 `boundedString()` 方法纯 Java，不涉及 MC 类型，直接保留在 `RegionNbtCodec` 中。
+
+> **colorHistory 的 NBT 序列化**（`IntTag.valueOf(color.value())` 等直接操作）不进 common，留在各平台 `RegionSavedData` 中。`RegionStore` 接口的 `colorHistory()`/`rememberColor()` 返回 `List<ArgbColor>` 纯 Java 类型，抽象层不暴露 NBT 细节。
 
 ### 4.4 服务端：ServerContext + RegionStore
 
@@ -249,39 +274,49 @@ RegionSavedData 因 SavedData API（1.20 vs 1.21 的 Factory + HolderLookup.Prov
 ```java
 // common: service/ServerContext.java
 public interface ServerContext {
-    ServerContext overworld();
-    ServerContext getLevel(String dimensionKey);  // 维度 key 用字符串（如 "minecraft:overworld"）
-    RegionStore getRegionStore();                  // 获取该维度的区域存储
+    RegionStore overworld();
+    RegionStore getLevel(String dimensionKey);
+    Iterable<RegionStore> allLevels();
 }
 ```
 
 ```java
 // common: service/RegionStore.java
+// 方法集与现有 RegionSavedData 的公共 API 对齐
 public interface RegionStore {
-    Map<RegionId, Region> loadAll();
-    void saveAll(Map<RegionId, Region> regions);
+    Collection<Region> allRegions();
+    Optional<Region> find(RegionId id);
+    void put(Region region);
+    boolean remove(RegionId id);
+    List<ArgbColor> colorHistory();
+    void rememberColor(ArgbColor color, int limit);
 }
 ```
 
-`RegionService` 从直接依赖 `MinecraftServer`/`ServerLevel` 改为依赖 `ServerContext`，通过 `RegionStore` 接口读写数据。
+`RegionService` 从直接依赖 `MinecraftServer`/`ServerLevel` 改为依赖 `ServerContext`/`RegionStore`，方法签名从 `list(ServerLevel)` 改为 `list(RegionStore)`。
+
+**调用方改造：** 现有调用方（`RegionCommands`、`RegionEditRequestHandler`、`XaeroRegionsRev`）手里只有 `ServerLevel`/`MinecraftServer`。平台子项目需提供桥接工具方法（如 `RegionStores.of(ServerLevel)` 返回 `RegionSavedDataStore` 包装），供调用方在不改动业务逻辑的情况下完成转换。具体调用点改造代码在实施计划中给出。
 
 各平台实现：
 
-- `NeoForgeServerContext` / `ForgeServerContext`：包装 MinecraftServer/ServerLevel，`getRegionStore()` 内部返回各自 `RegionSavedData` 的桥接实现
-- `RegionSavedDataBridge`：各平台实现 `RegionStore`，委托给本平台的 `RegionSavedData`（NeoForge 用 1.21 API，Forge 用 1.20 API）
+- `NeoForgeServerContext` / `ForgeServerContext`：包装 `MinecraftServer`，`overworld()` / `allLevels()` 返回 `RegionSavedDataStore` 包装
+- `RegionSavedDataStore`：各平台实现 `RegionStore`，委托给本平台的 `RegionSavedData`（NeoForge 用 1.21 API，Forge 用 1.20 API）
 
-> ServerContext/RegionStore 的具体方法集在实现阶段根据 RegionService 实际调用确定。
+> **colorHistory 的 NBT 序列化**（`IntTag.valueOf` 等直接操作）留在各平台 `RegionSavedData` 中，不进 common。Forge 端需手动补 master 的 `Math.min(colorList.size(), ColorPaletteLimits.MAX_COLORS)` 上限保护。
 
-### 4.5 客户端：EditorOpener
+### 4.5 客户端：EditResultHandler
 
 ```java
-// common: client/EditorOpener.java
-public interface EditorOpener {
-    void openEditor(/* 编辑器参数，实现阶段确定 */);
+// common: client/EditResultHandler.java
+// 接收编辑结果并转发给当前编辑器屏幕的回调接口
+public interface EditResultHandler {
+    void handleEditResult(long requestId, boolean success, boolean closeScreen, String message);
 }
 ```
 
-`ClientRegionEditResultHandler` 原来调用 `Minecraft.getInstance().setScreen(screen)`，改为通过 `EditorOpener` 回调。平台子项目注入实际的 Screen 实例创建逻辑。
+> 接口必须包含 `closeScreen` 参数——`RegionEditResultPacket` 有 4 个字段（requestId、success、closeScreen、message），`RegionSubmissionState.receive` 依赖 `success && closeScreen` 判断是否关闭屏幕。省略 closeScreen 会破坏关屏逻辑。
+
+`ClientRegionEditResultHandler` 原来调用 `Minecraft.getInstance().screen instanceof RegionStyleEditScreen` 并转发 packet，改为通过 `EditResultHandler` 回调。平台子项目注入实现（检查当前 Screen 类型并转发）。`ClientboundPayloadBridge`（NeoForge）/ `RegionNetwork` 的 consumer（Forge）负责从 packet 拆字段调用 `ClientRegionEditResultHandler.handle(requestId, success, closeScreen, message)`。
 
 ### 4.6 不抽象的层
 
@@ -370,15 +405,17 @@ imblocker_runtime_file_id=4626679
 mod_description=Server-synced polygon regions rendered on Xaero's World Map for Forge 1.20.1.
 ```
 
-### 5.3 buildSrc
+### 5.3 共享 Gradle 脚本
+
+不使用 buildSrc（避免预编译脚本插件与 `apply from:` 的机制冲突），共享脚本放在 `gradle/` 目录：
 
 ```text
-buildSrc/
-├── build.gradle                     # 无外部依赖，纯 Groovy
-└── src/main/groovy/
-    ├── region-repositories.gradle   # 仓库声明（mavenCentral + Modrinth + CurseMaven）
-    └── region-platform.gradle       # bump 任务（指向根 gradle.properties）、jar manifest 模板
+gradle/
+├── region-repositories.gradle   # 仓库声明（mavenCentral + Modrinth + CurseMaven）
+└── region-platform.gradle       # jar manifest 模板
 ```
+
+`bump` 任务注册在根 `build.gradle`（避免子项目并行执行冲突），指向根 `gradle.properties`。
 
 **region-repositories.gradle** — 所有子项目 apply：
 
@@ -400,8 +437,8 @@ repositories {
 
 **region-platform.gradle** — 平台子项目 apply：
 
-- `bump` 任务（从 master 的 build.gradle 搬入，`file('gradle.properties')` 改为 `rootProject.file('gradle.properties')`）
 - jar manifest 属性模板（Specification-Title 等）
+- 不含 bump 任务（bump 统一在根 build.gradle 注册）
 
 ### 5.4 common/build.gradle
 
@@ -410,7 +447,7 @@ plugins {
     id 'java-library'
 }
 
-apply from: "$rootDir/buildSrc/src/main/groovy/region-repositories.gradle"
+apply from: "$rootDir/gradle/region-repositories.gradle"
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
@@ -433,7 +470,7 @@ plugins {
     id 'net.neoforged.moddev' version '2.0.141'
 }
 
-apply from: "$rootDir/buildSrc/src/main/groovy/region-platform.gradle"
+apply from: "$rootDir/gradle/region-platform.gradle"
 
 version = "${mod_version}+${artifact_loader}-${minecraft_version}"
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
@@ -472,7 +509,7 @@ plugins {
     id 'net.minecraftforge.gradle' version '[6.0.16,6.2)'
 }
 
-apply from: "$rootDir/buildSrc/src/main/groovy/region-platform.gradle"
+apply from: "$rootDir/gradle/region-platform.gradle"
 
 version = "${mod_version}+${artifact_loader}-${minecraft_version}"
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
@@ -507,12 +544,14 @@ processResources {
 
 ### 5.7 sourceSet 纳入机制
 
-核心设计：平台子项目通过 `mods {}` 块用 `sourceSet project(':common').sourceSets.main` 把 common 的源码直接纳入模组编译范围，**不把 common 打成独立 jar 再依赖**。
+核心设计：平台子项目通过 **两层机制** 消费 common：
 
-好处：
+1. `mods {}` 块用 `sourceSet project(':common').sourceSets.main` 告诉加载器 common 的源码属于该 mod（dev 运行时识别 mod 类和资源）
+2. `dependencies { implementation project(':common') }` 把 common 的编译产物和传递依赖（如 JOML）加入 classpath
 
-- 运行时所有类在同一个 classloader，避免反射加载问题
-- common 的源码变更自动被平台编译感知，无需手动发布
+两者**叠加使用**，缺一不可。仅 sourceSet 纳入不会把 common 的依赖（JOML）加到平台 classpath；仅 project 依赖不会让 dev 运行时 mod 加载器识别 common 的类。
+
+common 源码由 common 项目的 Java 17 toolchain 独占编译，平台子项目只消费其编译产物（Java 17 字节码在 Java 21 runtime 下向后兼容）。
 
 ### 5.8 资源文件共享
 
