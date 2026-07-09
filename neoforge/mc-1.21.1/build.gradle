@@ -1,1 +1,154 @@
-// 占位，阶段 2 填充
+plugins {
+    id 'java-library'
+    id 'eclipse'
+    id 'idea'
+    id 'maven-publish'
+    id 'net.neoforged.moddev' version '2.0.141'
+}
+
+apply from: "$rootDir/gradle/region-platform.gradle"
+
+version = "${mod_version}+${artifact_loader}-${minecraft_version}"
+group = mod_group_id
+
+base {
+    archivesName = archives_base_name
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+neoForge {
+    version = project.neo_version
+
+    runs {
+        configureEach {
+            gameDirectory = project.file('run')
+            systemProperty 'forge.logging.markers', 'REGISTRIES'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            logLevel = org.slf4j.event.Level.DEBUG
+        }
+
+        client {
+            client()
+            gameDirectory = project.file('run-client')
+        }
+
+        server {
+            server()
+            gameDirectory = project.file('run-server')
+            programArgument '--nogui'
+        }
+
+        gameTestServer {
+            type = 'gameTestServer'
+        }
+
+        data {
+            data()
+            gameDirectory = project.file('run-data')
+            programArguments = [
+                    '--mod', mod_id,
+                    '--all',
+                    '--output', file('src/generated/resources/').absolutePath,
+                    '--existing', file('src/main/resources/').absolutePath
+            ]
+        }
+    }
+
+    mods {
+        "${mod_id}" {
+            sourceSet project(':common').sourceSets.main
+            sourceSet sourceSets.main
+        }
+    }
+
+    unitTest {
+        enable()
+        testedMod = mods."${mod_id}"
+    }
+}
+
+sourceSets.main.resources { srcDir 'src/generated/resources' }
+
+configurations {
+    clientRuntimeMods {
+        canBeConsumed = false
+        canBeResolved = true
+    }
+}
+
+dependencies {
+    implementation project(':common')
+
+    clientRuntimeMods "curse.maven:xaeros-world-map-317780:${xaero_world_map_runtime_file_id}"
+    clientRuntimeMods "curse.maven:imblocker-483760:${imblocker_runtime_file_id}"
+
+    testImplementation platform('org.junit:junit-bom:5.10.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test', Test) {
+    useJUnitPlatform()
+}
+
+tasks.named('clean', Delete).configure {
+    delete 'bin', 'logs', '.tmp', 'run/logs', 'run-client/logs', 'run-server/logs', 'run-data/logs'
+}
+
+tasks.register('syncClientRuntimeMods', Sync) {
+    group = 'neoForge runs'
+    description = 'Sync external runtime mods for the NeoForge client run.'
+    from configurations.clientRuntimeMods
+    into layout.projectDirectory.dir('run-client/mods')
+}
+
+tasks.named('prepareClientRun') {
+    dependsOn tasks.named('syncClientRuntimeMods')
+}
+
+tasks.named('runClient') {
+    dependsOn tasks.named('syncClientRuntimeMods')
+}
+
+tasks.named('processResources', ProcessResources).configure {
+    from(project(':common').sourceSets.main.resources)
+
+    var replaceProperties = [
+            minecraft_version           : minecraft_version,
+            minecraft_version_range     : minecraft_version_range,
+            neo_version                 : neo_version,
+            neo_version_range           : neo_version_range,
+            loader_version_range        : loader_version_range,
+            xaero_world_map_version_range: xaero_world_map_version_range,
+            mod_id                      : mod_id,
+            mod_name                    : mod_name,
+            mod_license                 : mod_license,
+            mod_version                 : mod_version,
+            mod_authors                 : mod_authors,
+            mod_description             : mod_description
+    ]
+    inputs.properties replaceProperties
+
+    filesMatching(['META-INF/neoforge.mods.toml', 'pack.mcmeta']) {
+        expand replaceProperties + [project: project]
+    }
+}
+
+tasks.register('verifyArchiveName') {
+    group = 'verification'
+    description = 'Verify the built jar name includes the loader and Minecraft version.'
+    dependsOn tasks.named('jar')
+
+    doLast {
+        String expectedName = "${archives_base_name}-${mod_version}+${artifact_loader}-${minecraft_version}.jar"
+        String actualName = tasks.named('jar', Jar).get().archiveFileName.get()
+        if (actualName != expectedName) {
+            throw new GradleException("Unexpected jar name '${actualName}'. Expected '${expectedName}'.")
+        }
+    }
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('verifyArchiveName')
+}
