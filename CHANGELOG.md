@@ -4,9 +4,24 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 的结构，并使用语义化版本。
 
-## [Unreleased]
+## [1.0.0] - 2026-07-10
 
-暂无。
+这是项目的第一个大版本。核心变更是将双分支（master NeoForge 1.21.1 + forge/1.20.1）合并为单分支 Gradle 多子项目结构，同时统一了两条加载器线的功能。NeoForge 1.21.1 与 Forge 1.20.1 现在在同一仓库中并存，共享平台无关的业务逻辑。
+
+### 新功能
+
+- Forge 1.20.1 端移植自动校准开关功能：默认关闭，与 NeoForge 端行为对齐；支持 `/region autoCalibrate true|false` 游戏内热切换，配置持久化到 `config/xaero_map_region_rev/client.json`。
+- Forge 1.20.1 端补齐 NBT 字段长度校验和颜色历史上限保护（`ColorPaletteLimits.MAX_COLORS`），与 NeoForge 端安全边界对齐。
+
+### 其他改进
+
+- 将项目重构为 Gradle 多子项目：根 `build.gradle` 只注册跨平台聚合任务（`buildAll`、`bump`），`settings.gradle` include `common`、`neoforge:mc-1.21.1`、`forge:mc-1.20.1`。
+- 新增 `common/` 纯 Java 17 公共模块（java-library），承载平台无关的区域模型、网络数据类、NBT 编解码、`RegionService` 业务服务层与一组平台抽象接口（`PacketBuffer`、`NbtCompound`/`NbtList`/`NbtFactory`、`ServerContext`/`RegionStore`、`EditResultHandler`）。
+- 将原 `src/` 下不依赖 Minecraft API 的源码与纯 Java 契约测试迁入 `common/`；剩余平台相关源码迁入各加载器子项目，并为抽象接口提供 NeoForge / Forge 各自的适配实现。
+- 平台子项目通过 sourceSet 把 `common` 的 main 源码纳入 mod classpath，并以 `implementation project(':common')` 提供编译依赖，MC API 边界集中隔离在适配层。
+- 迁移构建系统：版本号、构建/运行配置集中到各平台子项目的 `build.gradle` 与 `gradle.properties`，模组元数据（mod_id、mod_version 等）保留在根 `gradle.properties`。
+- 新增 `buildAll` 跨平台构建任务；旧单项目下的 `src/` 目录已全部迁移并删除。
+- 更新 `.gitignore` 添加各平台 `run*/` 目录规则；同步更新 AGENTS.md、README.md 反映多子项目结构与命令。
 
 ## [0.1.5] - 2026-07-09
 
@@ -112,6 +127,7 @@
 
 <!-- 变更链接 -->
 
+[1.0.0]: https://github.com/ONEGAYI/Xaero-Map-Regions-rev/compare/v0.1.5...v1.0.0
 [0.1.5]: https://github.com/ONEGAYI/Xaero-Map-Regions-rev/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/ONEGAYI/Xaero-Map-Regions-rev/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/ONEGAYI/Xaero-Map-Regions-rev/compare/v0.1.2...v0.1.3
