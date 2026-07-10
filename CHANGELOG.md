@@ -4,6 +4,14 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 的结构，并使用语义化版本。
 
+## [1.0.1] - 2026-07-11
+
+这是一个紧急修复版本。1.0.0 的多子项目重构引入了打包缺陷：发布 jar 只包含各平台子项目自身的 class，漏掉了 `common` 公共模块的全部 class，导致加载时 `ClassNotFoundException: com.suian.xaeroregionsrev.service.RegionStore` 崩溃。本版本修正构建脚本，将 common 的 class 合并进发布 jar。
+
+### Bug 修复
+
+- 修复发布 jar 缺失 `common` 公共模块 class 的打包缺陷：在共享的 `gradle/region-platform.gradle` 的 `jar` 任务中加入 `from(project(':common').sourceSets.main.output.classesDirs)`，把 common 的 class 合并进 NeoForge 与 Forge 两个平台的发布 jar。此前 `implementation project(':common')` 与 `mods { sourceSet project(':common') }` 只覆盖编译期依赖与开发运行时（runClient/测试），不会让 common 的 class 进入 `jar` 产物；Forge 的 `reobfJar` 通过 `finalizedBy` 继承 jar 输出，合并的 class 一并被 reobf 处理。
+
 ## [1.0.0] - 2026-07-10
 
 这是项目的第一个大版本。核心变更是将双分支（master NeoForge 1.21.1 + forge/1.20.1）合并为单分支 Gradle 多子项目结构，同时统一了两条加载器线的功能。NeoForge 1.21.1 与 Forge 1.20.1 现在在同一仓库中并存，共享平台无关的业务逻辑。
@@ -127,6 +135,7 @@
 
 <!-- 变更链接 -->
 
+[1.0.1]: https://github.com/ONEGAYI/Xaero-Map-Regions-rev/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/ONEGAYI/Xaero-Map-Regions-rev/compare/v0.1.5...v1.0.0
 [0.1.5]: https://github.com/ONEGAYI/Xaero-Map-Regions-rev/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/ONEGAYI/Xaero-Map-Regions-rev/compare/v0.1.3...v0.1.4

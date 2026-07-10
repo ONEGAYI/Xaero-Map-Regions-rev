@@ -5,6 +5,13 @@
 apply from: "$rootDir/gradle/region-repositories.gradle"
 
 tasks.named('jar', Jar).configure {
+    // 把 common 子模块的 class 合并进发布 jar。
+    // common 的资源仍由各平台 processResources 合并，此处只取 classesDirs，
+    // 避免资源重复打包以及将来 common 资源引入占位符后与平台 expand 副本冲突。
+    // Forge 的 reobfJar 通过 finalizedBy 继承 jar 输出，合并的 common class 会一并被处理；
+    // common 为纯 Java 不含 Minecraft API 引用，不受 reobf 影响。
+    from(project(':common').sourceSets.main.output.classesDirs)
+
     manifest {
         attributes([
                 'Specification-Title'     : mod_id,
