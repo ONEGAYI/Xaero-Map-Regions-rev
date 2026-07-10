@@ -190,6 +190,19 @@ class MapProjectionAdapterTest {
     }
 
     @Test
+    void shouldRunCalibrationSkipsWhenDisabled() {
+        assertEquals(false, MapProjectionAdapter.shouldRunCalibration(false, 100L, Long.MIN_VALUE));
+        assertEquals(false, MapProjectionAdapter.shouldRunCalibration(false, 1_000_000_100L, 100L));
+    }
+
+    @Test
+    void shouldRunCalibrationDelegatesToIntervalWhenEnabled() {
+        assertEquals(true, MapProjectionAdapter.shouldRunCalibration(true, 100L, Long.MIN_VALUE));
+        assertEquals(false, MapProjectionAdapter.shouldRunCalibration(true, 500_000_000L, 100L));
+        assertEquals(true, MapProjectionAdapter.shouldRunCalibration(true, 1_000_000_100L, 100L));
+    }
+
+    @Test
     void calibrationDueTreatsClockRollbackAsDue() {
         assertEquals(true, MapProjectionAdapter.isCalibrationDue(50L, 100L));
     }

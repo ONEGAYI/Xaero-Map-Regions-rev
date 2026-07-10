@@ -1,5 +1,6 @@
 package com.suian.xaeroregionsrev.client.xaero;
 
+import com.suian.xaeroregionsrev.client.ClientLocalConfig;
 import com.suian.xaeroregionsrev.region.RegionPoint;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -18,9 +19,33 @@ public final class MapProjectionAdapter {
     private static final MapProjectionAdapter SHARED = new MapProjectionAdapter();
     private MapCalibration calibration = MapCalibration.NONE;
     private long lastCalibrationAtNanos = Long.MIN_VALUE;
+    private volatile boolean calibrationEnabled = ClientLocalConfig.DEFAULT_AUTO_CALIBRATE_ENABLED;
 
     public static MapProjectionAdapter shared() {
         return SHARED;
+    }
+
+    public boolean isCalibrationEnabled() {
+        return calibrationEnabled;
+    }
+
+    /**
+     * 切换自动校准开关（仅内存，不落盘）。
+     * 关闭时立即清除已累积的校准偏移，使区域回到无校准投影。
+     */
+    public void setCalibrationEnabled(boolean enabled) {
+        calibrationEnabled = enabled;
+        if (!enabled) {
+            calibration = MapCalibration.NONE;
+            lastCalibrationAtNanos = Long.MIN_VALUE;
+        }
+    }
+
+    /**
+     * 从持久化配置同步初始开关状态，供客户端启动时调用。
+     */
+    public void syncCalibrationEnabledFromConfig() {
+        setCalibrationEnabled(ClientLocalConfig.shared().isAutoCalibrateEnabled());
     }
 
     public Vector2f project(Screen screen, RegionPoint point) {
@@ -58,7 +83,7 @@ public final class MapProjectionAdapter {
     }
 
     public void calibrate(Screen screen, double mouseX, double mouseY, long nowNanos) {
-        if (!isCalibrationDue(nowNanos, lastCalibrationAtNanos)) {
+        if (!shouldRunCalibration(calibrationEnabled, nowNanos, lastCalibrationAtNanos)) {
             return;
         }
         Optional<MapViewport> viewport = readXaeroViewport(screen);
@@ -77,6 +102,10 @@ public final class MapProjectionAdapter {
         return lastCalibrationAtNanos == Long.MIN_VALUE
                 || nowNanos < lastCalibrationAtNanos
                 || nowNanos - lastCalibrationAtNanos >= CALIBRATION_INTERVAL_NANOS;
+    }
+
+    static boolean shouldRunCalibration(boolean enabled, long nowNanos, long lastCalibrationAtNanos) {
+        return enabled && isCalibrationDue(nowNanos, lastCalibrationAtNanos);
     }
 
     public static Vector2f projectInViewport(RegionPoint point, MapViewport viewport) {

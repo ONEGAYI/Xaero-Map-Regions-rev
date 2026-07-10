@@ -3,6 +3,7 @@ package com.suian.xaeroregionsrev.client;
 import com.suian.xaeroregionsrev.client.editor.RegionManagerScreen;
 import com.suian.xaeroregionsrev.client.editor.RegionStyleEditResultHandler;
 import com.suian.xaeroregionsrev.client.editor.RegionStyleEditScreen;
+import com.suian.xaeroregionsrev.client.xaero.MapProjectionAdapter;
 import com.suian.xaeroregionsrev.client.xaero.XaeroMapInputHandler;
 import com.suian.xaeroregionsrev.client.xaero.XaeroMapOverlayController;
 import com.suian.xaeroregionsrev.client.xaero.XaeroMapOverlayRenderer;
@@ -32,6 +33,7 @@ public final class XaeroRegionsClient {
         MinecraftForge.EVENT_BUS.addListener(XaeroMapInputHandler::onMouseButtonPressed);
         MinecraftForge.EVENT_BUS.addListener(XaeroRegionsClient::onScreenOpening);
         MinecraftForge.EVENT_BUS.addListener(XaeroRegionsClient::onClientLoggingOut);
+        MapProjectionAdapter.shared().syncCalibrationEnabledFromConfig();
     }
 
     private static void onScreenOpening(ScreenEvent.Opening event) {
