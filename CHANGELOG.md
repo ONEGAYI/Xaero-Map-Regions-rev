@@ -4,9 +4,14 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 的结构，并使用语义化版本。
 
-## [Unreleased]
+## [1.0.0] - 2026-07-10
 
-这是一个面向工程结构的重构版本。项目从单一 NeoForge 源码布局迁移到 `common/` + `neoforge/mc-1.21.1/` + `forge/mc-1.20.1/` 的 Gradle 多子项目结构，让 NeoForge 1.21.1 与 Forge 1.20.1 两条维护线在同一仓库中并存、共享平台无关的业务逻辑。
+这是项目的第一个大版本。核心变更是将双分支（master NeoForge 1.21.1 + forge/1.20.1）合并为单分支 Gradle 多子项目结构，同时统一了两条加载器线的功能。NeoForge 1.21.1 与 Forge 1.20.1 现在在同一仓库中并存，共享平台无关的业务逻辑。
+
+### 新功能
+
+- Forge 1.20.1 端移植自动校准开关功能：默认关闭，与 NeoForge 端行为对齐；支持 `/region autoCalibrate true|false` 游戏内热切换，配置持久化到 `config/xaero_map_region_rev/client.json`。
+- Forge 1.20.1 端补齐 NBT 字段长度校验和颜色历史上限保护（`ColorPaletteLimits.MAX_COLORS`），与 NeoForge 端安全边界对齐。
 
 ### 其他改进
 
@@ -122,6 +127,7 @@
 
 <!-- 变更链接 -->
 
+[1.0.0]: https://github.com/ONEGAYI/Xaero-Map-Regions-rev/compare/v0.1.5...v1.0.0
 [0.1.5]: https://github.com/ONEGAYI/Xaero-Map-Regions-rev/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/ONEGAYI/Xaero-Map-Regions-rev/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/ONEGAYI/Xaero-Map-Regions-rev/compare/v0.1.2...v0.1.3
