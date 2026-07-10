@@ -67,7 +67,7 @@ dependencies {
     implementation project(':common')
 
     clientRuntimeMods fg.deobf("maven.modrinth:xaeros-world-map:${artifact_loader}-${minecraft_version}-${xaero_world_map_runtime_version}")
-    clientRuntimeMods fg.deobf("curse.maven:imblocker-483780:${imblocker_runtime_file_id}")
+    clientRuntimeMods "curse.maven:imblocker-483780:${imblocker_runtime_file_id}"
 
     testImplementation platform('org.junit:junit-bom:5.10.2')
     testImplementation 'org.junit.jupiter:junit-jupiter'
