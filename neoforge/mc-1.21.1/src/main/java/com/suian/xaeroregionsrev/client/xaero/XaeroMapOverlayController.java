@@ -95,11 +95,41 @@ public final class XaeroMapOverlayController {
         return action != RegionEditorOverlay.Action.IGNORED;
     }
 
-    public static void renderRegionDecorations(GuiGraphics graphics, Screen screen, Region region, List<Vector2f> projected,
-                                               int mouseX, int mouseY) {
+    public static void renderRegionDecorations(GuiGraphics graphics, Region region, List<Vector2f> projected) {
         renderBoundary(graphics, region, projected);
         renderSelectedOutline(graphics, region, projected);
-        renderLabel(graphics, screen, region, projected, mouseX, mouseY);
+    }
+
+    public static Optional<RegionLabelCollisionLayout.Candidate> createLabelCandidate(
+            Screen screen, Region region, List<Vector2f> projected) {
+        List<RegionEditorOverlay.ScreenPoint> points = projected.stream()
+                .map(point -> new RegionEditorOverlay.ScreenPoint(point.x(), point.y()))
+                .toList();
+        var font = Minecraft.getInstance().font;
+        Optional<RegionLabelDisplay.InlineLabel> inlineLabel = RegionLabelDisplay.layoutInlineLabel(
+                region.label(), points, font.lineHeight, font::width);
+        if (inlineLabel.isEmpty()) {
+            return Optional.empty();
+        }
+        RegionLabelDisplay.InlineLabel label = inlineLabel.get();
+        int labelWidth = font.width(label.text());
+        if (label.x() + labelWidth < 0 || label.y() + font.lineHeight < 0
+                || label.x() > screen.width || label.y() > screen.height) {
+            return Optional.empty();
+        }
+        return Optional.of(new RegionLabelCollisionLayout.Candidate(
+                region.id(), label.text(), region.labelColor().value(),
+                label.x(), label.y(), labelWidth, font.lineHeight));
+    }
+
+    public static void renderInlineLabel(GuiGraphics graphics, RegionLabelCollisionLayout.Candidate label) {
+        graphics.drawString(Minecraft.getInstance().font, label.text(), label.x(), label.y(), label.textArgb(), true);
+    }
+
+    public static boolean isHovered(List<Vector2f> projected, int mouseX, int mouseY) {
+        return RegionLabelDisplay.isHovered(projected.stream()
+                .map(point -> new RegionEditorOverlay.ScreenPoint(point.x(), point.y()))
+                .toList(), mouseX, mouseY);
     }
 
     private static void renderBoundary(GuiGraphics graphics, Region region, List<Vector2f> projected) {
@@ -204,36 +234,6 @@ public final class XaeroMapOverlayController {
             maxY = Math.max(maxY, point.y());
         }
         return maxY - minY;
-    }
-
-    private static void renderLabel(GuiGraphics graphics, Screen screen, Region region, List<Vector2f> projected,
-                                    int mouseX, int mouseY) {
-        List<RegionEditorOverlay.ScreenPoint> points = projected.stream()
-                .map(point -> new RegionEditorOverlay.ScreenPoint(point.x(), point.y()))
-                .toList();
-        boolean hovered = RegionLabelDisplay.isHovered(points, mouseX, mouseY);
-        if (hovered) {
-            graphics.renderTooltip(Minecraft.getInstance().font, Component.literal(region.label()), mouseX, mouseY);
-        }
-        Optional<RegionLabelDisplay.InlineLabel> inlineLabel = RegionLabelDisplay.layoutInlineLabel(
-                region.label(), points, Minecraft.getInstance().font.lineHeight, Minecraft.getInstance().font::width);
-        if (inlineLabel.isEmpty()) {
-            return;
-        }
-        RegionLabelDisplay.InlineLabel label = inlineLabel.get();
-        int labelWidth = Minecraft.getInstance().font.width(label.text());
-        if (label.x() + labelWidth < 0 || label.y() + Minecraft.getInstance().font.lineHeight < 0
-                || label.x() > screen.width || label.y() > screen.height) {
-            return;
-        }
-        graphics.drawString(
-                Minecraft.getInstance().font,
-                label.text(),
-                label.x(),
-                label.y(),
-                region.labelColor().value(),
-                true
-        );
     }
 
     public static boolean isProjectedRegionVisible(List<Vector2f> projected, int screenWidth, int screenHeight) {

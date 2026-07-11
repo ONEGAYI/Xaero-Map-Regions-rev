@@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
 import com.suian.xaeroregionsrev.client.ClientRegionCache;
 import com.suian.xaeroregionsrev.region.RegionPoint;
 import com.suian.xaeroregionsrev.region.Region;
+import com.suian.xaeroregionsrev.region.RegionId;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -11,7 +12,9 @@ import net.neoforged.neoforge.client.event.ScreenEvent;
 import org.joml.Vector2f;
 import org.slf4j.Logger;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public final class XaeroMapOverlayRenderer {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -42,6 +45,10 @@ public final class XaeroMapOverlayRenderer {
     private static void renderRegions(GuiGraphics graphics, Screen screen, List<Region> regions, String currentDimension,
                                       int mouseX, int mouseY) {
         int renderedRegions = 0;
+        List<RegionLabelCollisionLayout.Candidate> labelCandidates = new ArrayList<>();
+        List<RegionHoverTooltipLayout.Candidate> hoveredCandidates = new ArrayList<>();
+        Optional<RegionId> selectedId = XaeroMapOverlayController.session().selectedRegionId();
+
         for (Region region : regions) {
             if (region.points().size() < 3 || !region.dimension().equals(currentDimension)) {
                 continue;
@@ -51,9 +58,20 @@ public final class XaeroMapOverlayRenderer {
                 continue;
             }
             PolygonFillRenderer.fill(graphics, projected, region.color().value());
-            XaeroMapOverlayController.renderRegionDecorations(graphics, screen, region, projected, mouseX, mouseY);
+            XaeroMapOverlayController.renderRegionDecorations(graphics, region, projected);
+            XaeroMapOverlayController.createLabelCandidate(screen, region, projected).ifPresent(labelCandidates::add);
+            if (XaeroMapOverlayController.isHovered(projected, mouseX, mouseY)) {
+                hoveredCandidates.add(new RegionHoverTooltipLayout.Candidate(
+                        region.id(), region.label(), region.labelColor().value()));
+            }
             renderedRegions++;
         }
+
+        RegionLabelCollisionLayout.visibleCandidates(labelCandidates, selectedId, 2)
+                .forEach(label -> XaeroMapOverlayController.renderInlineLabel(graphics, label));
+        int rowHeight = Minecraft.getInstance().font.lineHeight + 2;
+        RegionTooltipRenderer.render(graphics, screen, RegionHoverTooltipLayout.layout(
+                hoveredCandidates, selectedId, screen.height, rowHeight), mouseX, mouseY);
         XaeroMapOverlayController.renderEditor(graphics, screen, mouseX, mouseY);
         logRender(screen, regions.size(), renderedRegions, currentDimension);
     }
