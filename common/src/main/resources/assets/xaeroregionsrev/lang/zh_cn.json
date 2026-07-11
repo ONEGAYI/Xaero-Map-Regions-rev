@@ -24,6 +24,7 @@
   "tooltip.xaeroregionsrev.redo_draft_point": "重做上一个顶点",
   "tooltip.xaeroregionsrev.submit_draft": "提交区域草稿",
   "tooltip.xaeroregionsrev.clear_draft": "清空草稿",
+  "tooltip.xaeroregionsrev.more_regions": "……还有 %s 个区域",
   "menu.xaeroregionsrev.delete": "删除",
   "menu.xaeroregionsrev.edit": "编辑",
   "screen.xaeroregionsrev.create_region": "创建区域",
