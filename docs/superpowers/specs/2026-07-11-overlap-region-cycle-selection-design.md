@@ -69,9 +69,9 @@ public static List<Region> selectStack(List<Region> regions, String dimension, i
 ```java
 private List<RegionId> candidateStack = List.of();   // 命中栈，顶层→底层顺序（渲染顺序的反转）
 private int selectionIndex = -1;                      // 当前在栈中的索引，-1 表示无选中
-private int lastClickX = Integer.MIN_VALUE;           // 上次命中的世界坐标
-private int lastClickZ = Integer.MIN_VALUE;
 ```
+
+> 注：初始设计曾包含 `lastClickX/Z` 字段，但"同一组候选"判定走的是 id 集合比较（见 1.3），坐标从不参与判定，因此移除该死状态。
 
 **`candidateStack` 排序约定**：存储为"顶层→底层"顺序，即渲染顺序的反转。`selectionIndex = 0` 对应顶层。这样循环方向（顶层→底层）即为索引递增方向，语义直观。
 
@@ -93,7 +93,7 @@ public boolean advanceSelection(List<Region> hitStack, int clickX, int clickZ)
 状态机流程：
 
 ```
-advanceSelection(hitStack, clickX, clickZ):
+advanceSelection(hitStack):
   if hitStack 为空:
     clearSelection()
     return false
@@ -107,8 +107,6 @@ advanceSelection(hitStack, clickX, clickZ):
     // 注意：推进基于上次的 candidateStack 快照，不受服务端同步导致的顺序变化影响
     selectionIndex = (selectionIndex + 1) % candidateStack.size()
     selectedRegionId = candidateStack.get(selectionIndex)
-    lastClickX = clickX
-    lastClickZ = clickZ
     return true
 
   else:
@@ -116,8 +114,6 @@ advanceSelection(hitStack, clickX, clickZ):
     candidateStack = reversedStack
     selectionIndex = 0
     selectedRegionId = candidateStack.get(0)
-    lastClickX = clickX
-    lastClickZ = clickZ
     return true
 ```
 
@@ -131,9 +127,8 @@ advanceSelection(hitStack, clickX, clickZ):
 
 - `candidateStack = List.of(regionId)`（单元素）
 - `selectionIndex = 0`
-- `lastClickX = lastClickZ = Integer.MIN_VALUE`（表示"非地图点击来源"）
 
-下次地图左键点击时，`advanceSelection` 的 id 集合对比必然不匹配（单元素 vs 新命中的栈），会重新从顶层开始循环。
+下次地图左键点击 `advanceSelection` 时，若新命中栈含 ≥2 个不同 id（或命中了不同 id），id 集合对比不匹配，会重新从顶层开始循环。若新命中恰好只有这一个区域（单元素、同 id），则退化为幂等——保持原选中，行为无害。
 
 ### 1.5 `selectionInfo()` 查询方法（供 HUD 使用）
 
@@ -162,8 +157,6 @@ public void clearSelection() {
     selectedRegionId = null;
     candidateStack = List.of();
     selectionIndex = -1;
-    lastClickX = Integer.MIN_VALUE;
-    lastClickZ = Integer.MIN_VALUE;
 }
 ```
 
@@ -349,12 +342,14 @@ private static void renderSelectionHud(GuiGraphics graphics, Screen screen, int 
 
 - 首次点击命中 1 个区域 → 选中它，`selectionInfo` 返回 `index=1, total=1`。
 - 首次点击命中 3 个区域 → 选中顶层（`index=1, total=3`）。
-- 同一组候选连续点击 → `index` 依次推进 `1 → 2 → 3 → 1`（循环回顶）。
+- 同一组候选连续点击 → `index` 依次推进 `1 → 2 → 3 → 1`（三层循环回顶，验证 `% size` 回绕）。
+- **id 集合相同但顺序变化**（服务端同步打乱顺序）→ 仍判为同一组，推进索引，且推进基于旧快照顺序。
 - 命中不同候选组 → 重新从顶层开始（`index=1`）。
 - 未命中任何区域 → 清空选中，`selectionInfo` 为空。
 - `select(RegionId)` 直接指定 → 候选栈为单元素，下次 `advanceSelection` 重新开始。
-- `clearSelection()` → `candidateStack`、`selectionIndex`、`lastClickX/Z` 全部清空。
-- `setEditing(false)` / `reset()` → 清空选中状态。
+- `clearSelection()` → `candidateStack`、`selectionIndex` 全部清空。
+- `setEditing(false)` / `reset()` → 清空选中状态，且重进编辑后同组从顶层重新开始（验证候选栈彻底清理）。
+- 全新 session（从未选中）→ `selectionInfo` 返回 empty。
 
 **`SelectionHudTextTest`（新增）**：
 
@@ -362,7 +357,8 @@ private static void renderSelectionHud(GuiGraphics graphics, Screen screen, int 
 - `total >= 2` 时 `displayText = "2/5  名称"`。
 - 名称超过最大宽度时截断，保留层数前缀完整，末尾 `...`，`truncated = true`。
 - 未超宽时 `truncated = false`。
-- 空名称边界情况。
+- `total = 0` 或负数 → 无前缀，只显示 label（防御性）。
+- 空 label → 不崩溃，`truncated = false`。
 
 ### 平台层
 
