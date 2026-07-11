@@ -283,12 +283,9 @@ public final class RegionEditorOverlay {
                 return Action.ADDED_DRAFT_POINT;
             }
             if (button == MouseButton.LEFT) {
-                return RegionSelection.selectTopmost(regions, dimension, worldPoint.x(), worldPoint.z())
-                        .map(region -> {
-                            session.select(region.id());
-                            return Action.SELECTED_REGION;
-                        })
-                        .orElse(Action.IGNORED);
+                List<Region> stack = RegionSelection.selectStack(regions, dimension, worldPoint.x(), worldPoint.z());
+                boolean selected = session.advanceSelection(stack, worldPoint.x(), worldPoint.z());
+                return selected ? Action.SELECTED_REGION : Action.IGNORED;
             }
             if (button == MouseButton.RIGHT && session.selectedRegionId().isPresent()) {
                 return Action.OPEN_CONTEXT_MENU;
