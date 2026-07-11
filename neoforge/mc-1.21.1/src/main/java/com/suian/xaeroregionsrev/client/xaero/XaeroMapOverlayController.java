@@ -6,6 +6,7 @@ import com.suian.xaeroregionsrev.client.editor.RegionEditSession;
 import com.suian.xaeroregionsrev.client.editor.RegionEditorOverlay;
 import com.suian.xaeroregionsrev.client.editor.RegionManagerScreen;
 import com.suian.xaeroregionsrev.client.editor.RegionStyleEditScreen;
+import com.suian.xaeroregionsrev.client.editor.SelectionHudText;
 import com.suian.xaeroregionsrev.network.RegionNetwork;
 import com.suian.xaeroregionsrev.network.payload.DeleteRegionRequestPacket;
 import com.suian.xaeroregionsrev.region.Region;
@@ -124,8 +125,41 @@ public final class XaeroMapOverlayController {
         }
         RegionEditorOverlay.renderToolbar(graphics, screen.width, screen.height, SESSION.isEditing(), mouseX, mouseY);
         RegionEditorOverlay.renderButton(graphics, screen.width, screen.height, SESSION.isEditing(), mouseX, mouseY);
+        renderSelectionHud(graphics, screen, mouseX, mouseY);
         if (contextMenu != null) {
             contextMenu.render(graphics);
+        }
+    }
+
+    private static void renderSelectionHud(GuiGraphics graphics, Screen screen, int mouseX, int mouseY) {
+        Optional<RegionEditSession.SelectionInfo> info = SESSION.selectionInfo();
+        if (info.isEmpty()) {
+            return;
+        }
+        String label = ClientRegionCache.regions().stream()
+                .filter(r -> r.id().equals(info.get().id()))
+                .map(Region::label)
+                .findFirst()
+                .orElse(info.get().id().value());
+
+        net.minecraft.client.gui.Font font = Minecraft.getInstance().font;
+        SelectionHudText text = SelectionHudText.of(
+                label, info.get().index(), info.get().total(), font::width, 160);
+
+        int textWidth = font.width(text.displayText());
+        int padding = 6;
+        int hudWidth = textWidth + padding * 2;
+        int hudHeight = font.lineHeight + 4 * 2;
+        int rightEdge = screen.width - RegionEditorOverlay.EDIT_BUTTON_MARGIN;
+        int hudX = rightEdge - hudWidth;
+        int hudY = RegionEditorOverlay.EDIT_BUTTON_MARGIN + RegionEditorOverlay.EDIT_BUTTON_HEIGHT + 6;
+
+        graphics.fill(hudX, hudY, hudX + hudWidth, hudY + hudHeight, 0xAA111111);
+        graphics.drawString(font, text.displayText(), hudX + padding, hudY + 4, 0xFFFFFFFF, false);
+
+        RegionEditorOverlay.Rect hudBounds = new RegionEditorOverlay.Rect(hudX, hudY, hudWidth, hudHeight);
+        if (text.truncated() && hudBounds.contains(mouseX, mouseY)) {
+            graphics.renderTooltip(font, Component.literal(text.fullText()), mouseX, mouseY);
         }
     }
 

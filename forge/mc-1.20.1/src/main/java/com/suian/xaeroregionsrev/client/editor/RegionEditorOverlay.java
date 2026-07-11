@@ -16,7 +16,7 @@ import java.util.Optional;
 public final class RegionEditorOverlay {
     public static final int EDIT_BUTTON_WIDTH = 22;
     public static final int EDIT_BUTTON_HEIGHT = 22;
-    private static final int EDIT_BUTTON_MARGIN = 12;
+    public static final int EDIT_BUTTON_MARGIN = 12;
     private static final int ICON_BUTTON_GAP = 6;
     private static final int ICON_SIZE = 16;
     private static final int ICON_PADDING = 3;
