@@ -111,6 +111,14 @@ public final class RegionEditSession {
         selectionIndex = 0;
     }
 
+    /**
+     * 推进区域选中状态机。
+     *
+     * @param hitStack selectStack 返回的命中区域列表（渲染顺序：底层在前，顶层在后）
+     * @param clickX   本次点击世界坐标 X（当前未参与判定，保留供未来精确坐标扩展）
+     * @param clickZ   本次点击世界坐标 Z（当前未参与判定，保留供未来精确坐标扩展）
+     * @return true 表示选中了某个区域；false 表示未命中（已清空选中）
+     */
     public boolean advanceSelection(List<Region> hitStack, int clickX, int clickZ) {
         if (hitStack.isEmpty()) {
             clearSelection();

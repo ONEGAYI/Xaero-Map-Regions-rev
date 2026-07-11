@@ -620,7 +620,7 @@ git commit -m "feat: RegionEditSession 新增重叠区域循环选中状态机
 - Test: `common/src/test/java/com/suian/xaeroregionsrev/client/editor/SelectionHudTextTest.java`（新增）
 
 **Interfaces:**
-- Produces: `public static SelectionHudText of(String label, int index, int total, IntUnaryOperator textWidth, int maxWidth)` — 返回 `record SelectionHudText(String displayText, String fullText, boolean truncated)`
+- Produces: `public static SelectionHudText of(String label, int index, int total, ToIntFunction<String> textWidth, int maxWidth)` — 返回 `record SelectionHudText(String displayText, String fullText, boolean truncated)`
 
 - [ ] **Step 1: 新建 SelectionHudTextTest 并编写失败测试**
 
@@ -631,14 +631,14 @@ package com.suian.xaeroregionsrev.client.editor;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.function.IntUnaryOperator;
+import java.util.function.ToIntFunction;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class SelectionHudTextTest {
 
     // 简单的等宽模拟：每个字符宽度 = 6 像素
-    private static final IntUnaryOperator CHAR_WIDTH_6 = s -> s * 6;
+    private static final ToIntFunction<String> CHAR_WIDTH_6 = s -> s.length() * 6;
 
     @Test
     void singleLayerShowsLabelOnly() {
@@ -728,7 +728,7 @@ Expected: FAIL — `SelectionHudText` 类不存在，编译错误。
 ```java
 package com.suian.xaeroregionsrev.client.editor;
 
-import java.util.function.IntUnaryOperator;
+import java.util.function.ToIntFunction;
 
 /**
  * 选中 HUD 的显示文本计算。纯计算逻辑，不依赖 Minecraft API，可单元测试。
@@ -748,7 +748,7 @@ public record SelectionHudText(String displayText, String fullText, boolean trun
      * @param maxWidth  最大允许宽度（像素）
      */
     public static SelectionHudText of(String label, int index, int total,
-                                       IntUnaryOperator textWidth, int maxWidth) {
+                                       ToIntFunction<String> textWidth, int maxWidth) {
         String prefix = total >= 2 ? index + "/" + total + LAYER_SEPARATOR : "";
         String fullText = prefix + label;
 
@@ -763,7 +763,7 @@ public record SelectionHudText(String displayText, String fullText, boolean trun
         return new SelectionHudText(displayText, fullText, true);
     }
 
-    private static String truncateToWidth(String text, int availableWidth, IntUnaryOperator textWidth) {
+    private static String truncateToWidth(String text, int availableWidth, ToIntFunction<String> textWidth) {
         if (availableWidth <= 0) {
             return "";
         }

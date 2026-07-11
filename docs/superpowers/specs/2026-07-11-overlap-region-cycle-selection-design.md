@@ -209,7 +209,7 @@ if (button == MouseButton.LEFT) {
 ```java
 package com.suian.xaeroregionsrev.client.editor;
 
-import java.util.function.IntUnaryOperator;
+import java.util.function.ToIntFunction;
 
 /**
  * 选中 HUD 的显示文本计算。纯计算逻辑，不依赖 Minecraft API，可单元测试。
@@ -222,11 +222,11 @@ public record SelectionHudText(String displayText, String fullText, boolean trun
      * @param label     区域名称
      * @param index     当前层（从 1 开始）
      * @param total     总层数
-     * @param textWidth 文本宽度计算函数（对应 Font::width）
+     * @param textWidth 文本宽度计算函数（对应 Font::width，String → 像素宽度）
      * @param maxWidth  最大允许宽度（像素）
      */
     public static SelectionHudText of(String label, int index, int total,
-                                       IntUnaryOperator textWidth, int maxWidth) { ... }
+                                       ToIntFunction<String> textWidth, int maxWidth) { ... }
 }
 ```
 
