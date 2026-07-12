@@ -72,7 +72,7 @@ public final class XaeroMapOverlayRenderer {
         int rowHeight = Minecraft.getInstance().font.lineHeight + 2;
         RegionTooltipRenderer.render(graphics, screen, RegionHoverTooltipLayout.layout(
                 hoveredCandidates, selectedId, screen.height, rowHeight), mouseX, mouseY);
-        XaeroMapOverlayController.renderEditor(graphics, screen, mouseX, mouseY);
+        XaeroMapOverlayController.renderEditor(graphics, screen, mouseX, mouseY, currentDimension);
         logRender(screen, regions.size(), renderedRegions, currentDimension);
     }
 

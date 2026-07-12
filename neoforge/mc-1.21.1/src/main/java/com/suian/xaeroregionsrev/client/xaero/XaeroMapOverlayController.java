@@ -149,25 +149,25 @@ public final class XaeroMapOverlayController {
         }
     }
 
-    public static void renderEditor(GuiGraphics graphics, Screen screen, int mouseX, int mouseY) {
+    public static void renderEditor(GuiGraphics graphics, Screen screen, int mouseX, int mouseY, String currentDimension) {
         if (SESSION.isEditing()) {
             RegionEditorOverlay.renderDraft(graphics, project(SESSION.draftPoints(), screen));
         }
         RegionEditorOverlay.renderToolbar(graphics, screen.width, screen.height, SESSION.isEditing(), mouseX, mouseY);
         RegionEditorOverlay.renderButton(graphics, screen.width, screen.height, SESSION.isEditing(), mouseX, mouseY);
-        renderSelectionHud(graphics, screen, mouseX, mouseY);
+        renderSelectionHud(graphics, screen, mouseX, mouseY, currentDimension);
         if (contextMenu != null) {
             contextMenu.render(graphics);
         }
     }
 
-    private static void renderSelectionHud(GuiGraphics graphics, Screen screen, int mouseX, int mouseY) {
+    private static void renderSelectionHud(GuiGraphics graphics, Screen screen, int mouseX, int mouseY, String currentDimension) {
         Optional<RegionEditSession.SelectionInfo> info = SESSION.selectionInfo();
         if (info.isEmpty()) {
             return;
         }
         String label = ClientRegionCache.regions().stream()
-                .filter(r -> r.id().equals(info.get().id()))
+                .filter(r -> r.id().equals(info.get().id()) && r.dimension().equals(currentDimension))
                 .map(Region::label)
                 .findFirst()
                 .orElse(info.get().id().value());

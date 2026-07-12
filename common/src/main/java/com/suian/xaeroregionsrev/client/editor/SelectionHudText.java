@@ -29,9 +29,19 @@ public record SelectionHudText(String displayText, String fullText, boolean trun
         }
 
         // 截断 label 部分，保留 prefix 完整
+        int prefixWidth = textWidth.applyAsInt(prefix);
         int ellipsisWidth = textWidth.applyAsInt(ELLIPSIS);
-        String truncatedLabel = truncateToWidth(label, maxWidth - textWidth.applyAsInt(prefix) - ellipsisWidth, textWidth);
-        String displayText = prefix + truncatedLabel + ELLIPSIS;
+        int availableForLabel = maxWidth - prefixWidth - ellipsisWidth;
+        String truncatedLabel;
+        String displayText;
+        if (availableForLabel < 0) {
+            // maxWidth 太小，连 prefix + 省略号都放不下：优先保留 prefix，不加省略号
+            truncatedLabel = truncateToWidth(label, maxWidth - prefixWidth, textWidth);
+            displayText = prefix + truncatedLabel;
+        } else {
+            truncatedLabel = truncateToWidth(label, availableForLabel, textWidth);
+            displayText = prefix + truncatedLabel + ELLIPSIS;
+        }
         return new SelectionHudText(displayText, fullText, true);
     }
 
