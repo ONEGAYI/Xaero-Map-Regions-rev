@@ -32,6 +32,46 @@ class RegionSelectionTest {
     }
 
     @Test
+    void selectStackReturnsAllHitsInListOrder() {
+        Region back = region("back", List.of(
+                new RegionPoint(0, 0),
+                new RegionPoint(20, 0),
+                new RegionPoint(20, 20),
+                new RegionPoint(0, 20)
+        ));
+        Region middle = region("middle", List.of(
+                new RegionPoint(5, 5),
+                new RegionPoint(15, 5),
+                new RegionPoint(15, 15),
+                new RegionPoint(5, 15)
+        ));
+        Region front = region("front", List.of(
+                new RegionPoint(8, 8),
+                new RegionPoint(12, 8),
+                new RegionPoint(12, 12),
+                new RegionPoint(8, 12)
+        ));
+
+        List<Region> stack = RegionSelection.selectStack(
+                List.of(back, middle, front), "minecraft:overworld", 10, 10);
+
+        assertEquals(List.of(new RegionId("back"), new RegionId("middle"), new RegionId("front")),
+                stack.stream().map(Region::id).toList());
+    }
+
+    @Test
+    void selectStackReturnsEmptyWhenNoHit() {
+        Region far = region("far", List.of(
+                new RegionPoint(100, 100),
+                new RegionPoint(120, 100),
+                new RegionPoint(120, 120),
+                new RegionPoint(100, 120)
+        ));
+
+        assertTrue(RegionSelection.selectStack(List.of(far), "minecraft:overworld", 10, 10).isEmpty());
+    }
+
+    @Test
     void ignoresRegionsFromOtherDimensions() {
         Region nether = new Region(
                 new RegionId("nether"),

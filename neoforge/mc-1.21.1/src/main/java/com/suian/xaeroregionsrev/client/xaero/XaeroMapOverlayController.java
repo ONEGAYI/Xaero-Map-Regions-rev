@@ -6,6 +6,7 @@ import com.suian.xaeroregionsrev.client.editor.RegionEditSession;
 import com.suian.xaeroregionsrev.client.editor.RegionEditorOverlay;
 import com.suian.xaeroregionsrev.client.editor.RegionManagerScreen;
 import com.suian.xaeroregionsrev.client.editor.RegionStyleEditScreen;
+import com.suian.xaeroregionsrev.client.editor.SelectionHudText;
 import com.suian.xaeroregionsrev.network.RegionNetwork;
 import com.suian.xaeroregionsrev.network.payload.DeleteRegionRequestPacket;
 import com.suian.xaeroregionsrev.region.Region;
@@ -94,11 +95,41 @@ public final class XaeroMapOverlayController {
         return action != RegionEditorOverlay.Action.IGNORED;
     }
 
-    public static void renderRegionDecorations(GuiGraphics graphics, Screen screen, Region region, List<Vector2f> projected,
-                                               int mouseX, int mouseY) {
+    public static void renderRegionDecorations(GuiGraphics graphics, Region region, List<Vector2f> projected) {
         renderBoundary(graphics, region, projected);
         renderSelectedOutline(graphics, region, projected);
-        renderLabel(graphics, screen, region, projected, mouseX, mouseY);
+    }
+
+    public static Optional<RegionLabelCollisionLayout.Candidate> createLabelCandidate(
+            Screen screen, Region region, List<Vector2f> projected) {
+        List<RegionEditorOverlay.ScreenPoint> points = projected.stream()
+                .map(point -> new RegionEditorOverlay.ScreenPoint(point.x(), point.y()))
+                .toList();
+        var font = Minecraft.getInstance().font;
+        Optional<RegionLabelDisplay.InlineLabel> inlineLabel = RegionLabelDisplay.layoutInlineLabel(
+                region.label(), points, font.lineHeight, font::width);
+        if (inlineLabel.isEmpty()) {
+            return Optional.empty();
+        }
+        RegionLabelDisplay.InlineLabel label = inlineLabel.get();
+        int labelWidth = font.width(label.text());
+        if (label.x() + labelWidth < 0 || label.y() + font.lineHeight < 0
+                || label.x() > screen.width || label.y() > screen.height) {
+            return Optional.empty();
+        }
+        return Optional.of(new RegionLabelCollisionLayout.Candidate(
+                region.id(), label.text(), region.labelColor().value(),
+                label.x(), label.y(), labelWidth, font.lineHeight));
+    }
+
+    public static void renderInlineLabel(GuiGraphics graphics, RegionLabelCollisionLayout.Candidate label) {
+        graphics.drawString(Minecraft.getInstance().font, label.text(), label.x(), label.y(), label.textArgb(), true);
+    }
+
+    public static boolean isHovered(List<Vector2f> projected, int mouseX, int mouseY) {
+        return RegionLabelDisplay.isHovered(projected.stream()
+                .map(point -> new RegionEditorOverlay.ScreenPoint(point.x(), point.y()))
+                .toList(), mouseX, mouseY);
     }
 
     private static void renderBoundary(GuiGraphics graphics, Region region, List<Vector2f> projected) {
@@ -118,14 +149,47 @@ public final class XaeroMapOverlayController {
         }
     }
 
-    public static void renderEditor(GuiGraphics graphics, Screen screen, int mouseX, int mouseY) {
+    public static void renderEditor(GuiGraphics graphics, Screen screen, int mouseX, int mouseY, String currentDimension) {
         if (SESSION.isEditing()) {
             RegionEditorOverlay.renderDraft(graphics, project(SESSION.draftPoints(), screen));
         }
         RegionEditorOverlay.renderToolbar(graphics, screen.width, screen.height, SESSION.isEditing(), mouseX, mouseY);
         RegionEditorOverlay.renderButton(graphics, screen.width, screen.height, SESSION.isEditing(), mouseX, mouseY);
+        renderSelectionHud(graphics, screen, mouseX, mouseY, currentDimension);
         if (contextMenu != null) {
             contextMenu.render(graphics);
+        }
+    }
+
+    private static void renderSelectionHud(GuiGraphics graphics, Screen screen, int mouseX, int mouseY, String currentDimension) {
+        Optional<RegionEditSession.SelectionInfo> info = SESSION.selectionInfo();
+        if (info.isEmpty()) {
+            return;
+        }
+        String label = ClientRegionCache.regions().stream()
+                .filter(r -> r.id().equals(info.get().id()) && r.dimension().equals(currentDimension))
+                .map(Region::label)
+                .findFirst()
+                .orElse(info.get().id().value());
+
+        net.minecraft.client.gui.Font font = Minecraft.getInstance().font;
+        SelectionHudText text = SelectionHudText.of(
+                label, info.get().index(), info.get().total(), font::width, 160);
+
+        int textWidth = font.width(text.displayText());
+        int padding = 6;
+        int hudWidth = textWidth + padding * 2;
+        int hudHeight = font.lineHeight + 4 * 2;
+        int rightEdge = screen.width - RegionEditorOverlay.EDIT_BUTTON_MARGIN;
+        int hudX = rightEdge - hudWidth;
+        int hudY = RegionEditorOverlay.EDIT_BUTTON_MARGIN + RegionEditorOverlay.EDIT_BUTTON_HEIGHT + 6;
+
+        graphics.fill(hudX, hudY, hudX + hudWidth, hudY + hudHeight, 0xAA111111);
+        graphics.drawString(font, text.displayText(), hudX + padding, hudY + 4, 0xFFFFFFFF, false);
+
+        RegionEditorOverlay.Rect hudBounds = new RegionEditorOverlay.Rect(hudX, hudY, hudWidth, hudHeight);
+        if (text.truncated() && hudBounds.contains(mouseX, mouseY)) {
+            graphics.renderTooltip(font, Component.literal(text.fullText()), mouseX, mouseY);
         }
     }
 
@@ -170,36 +234,6 @@ public final class XaeroMapOverlayController {
             maxY = Math.max(maxY, point.y());
         }
         return maxY - minY;
-    }
-
-    private static void renderLabel(GuiGraphics graphics, Screen screen, Region region, List<Vector2f> projected,
-                                    int mouseX, int mouseY) {
-        List<RegionEditorOverlay.ScreenPoint> points = projected.stream()
-                .map(point -> new RegionEditorOverlay.ScreenPoint(point.x(), point.y()))
-                .toList();
-        boolean hovered = RegionLabelDisplay.isHovered(points, mouseX, mouseY);
-        if (hovered) {
-            graphics.renderTooltip(Minecraft.getInstance().font, Component.literal(region.label()), mouseX, mouseY);
-        }
-        Optional<RegionLabelDisplay.InlineLabel> inlineLabel = RegionLabelDisplay.layoutInlineLabel(
-                region.label(), points, Minecraft.getInstance().font.lineHeight, Minecraft.getInstance().font::width);
-        if (inlineLabel.isEmpty()) {
-            return;
-        }
-        RegionLabelDisplay.InlineLabel label = inlineLabel.get();
-        int labelWidth = Minecraft.getInstance().font.width(label.text());
-        if (label.x() + labelWidth < 0 || label.y() + Minecraft.getInstance().font.lineHeight < 0
-                || label.x() > screen.width || label.y() > screen.height) {
-            return;
-        }
-        graphics.drawString(
-                Minecraft.getInstance().font,
-                label.text(),
-                label.x(),
-                label.y(),
-                region.labelColor().value(),
-                true
-        );
     }
 
     public static boolean isProjectedRegionVisible(List<Vector2f> projected, int screenWidth, int screenHeight) {

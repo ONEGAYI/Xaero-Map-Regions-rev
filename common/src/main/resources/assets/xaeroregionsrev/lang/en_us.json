@@ -24,6 +24,7 @@
   "tooltip.xaeroregionsrev.redo_draft_point": "Redo Last Vertex",
   "tooltip.xaeroregionsrev.submit_draft": "Submit Region Draft",
   "tooltip.xaeroregionsrev.clear_draft": "Clear Draft",
+  "tooltip.xaeroregionsrev.more_regions": "…and %s more regions",
   "menu.xaeroregionsrev.delete": "Delete",
   "menu.xaeroregionsrev.edit": "Edit",
   "screen.xaeroregionsrev.create_region": "Create Region",
