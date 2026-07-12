@@ -4,6 +4,29 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 的结构，并使用语义化版本。
 
+## [1.1.0] - 2026-07-12
+
+本次更新重点解决了重叠区域在编辑器和地图中的交互与显示问题。现在当多个区域在同一位置重叠时，可以通过连续点击循环切换选中不同图层，悬停时也会合并为一个清晰的气泡而非多个叠在一起。
+
+### 新功能
+
+- **重叠区域循环选中**：在编辑模式下点击重叠区域时，第一次选中顶层，连续点击逐层向下切换（顶层 → 底层 → 回到顶层），不再只能选到最上层。([c5dc790](https://github.com/ONEGAYI/Xaero-Map-Regions-rev/commit/c5dc790), [8bc6658](https://github.com/ONEGAYI/Xaero-Map-Regions-rev/commit/8bc6658))
+- **选中区域 HUD**：右上角编辑按钮下方显示当前选中的层数和区域名称。重叠 ≥2 层时显示「当前/总数 区域名」，单层只显示名称；名称过长自动截断并悬停显示全名。([522926b](https://github.com/ONEGAYI/Xaero-Map-Regions-rev/commit/522926b), [d862dec](https://github.com/ONEGAYI/Xaero-Map-Regions-rev/commit/d862dec))
+
+### Bug 修复
+
+- **合并重叠区域悬停气泡**：多个区域重叠时鼠标悬停不再产生多个互相覆盖的气泡，改为合并为一个气泡，每行显示一个区域名，最多 8 行，超出时显示遗漏汇总。([eb55340](https://github.com/ONEGAYI/Xaero-Map-Regions-rev/commit/eb55340), [676ac3d](https://github.com/ONEGAYI/Xaero-Map-Regions-rev/commit/676ac3d))
+- **行内标签碰撞避让**：重叠区域的地图内标签不再互相叠字，碰撞时保留选中区域或更高层区域的标签。([0ea66a9](https://github.com/ONEGAYI/Xaero-Map-Regions-rev/commit/0ea66a9))
+- **气泡文字自适应描边**：气泡中每个区域名使用对应标签颜色（忽略透明度），并根据 WCAG 对比度自动选择不透明黑色或白色八方向描边，保证可读性。([eb55340](https://github.com/ONEGAYI/Xaero-Map-Regions-rev/commit/eb55340))
+- **HUD 维度过滤**：选中区域 HUD 查找区域名时增加当前维度过滤，避免跨维度同名 ID 冲突时显示错误标签。([63282c9](https://github.com/ONEGAYI/Xaero-Map-Regions-rev/commit/63282c9))
+- **HUD 截断宽度校验**：修复极小 maxWidth 下 `SelectionHudText` 截断后 displayText 仍超宽的契约违反。([63282c9](https://github.com/ONEGAYI/Xaero-Map-Regions-rev/commit/63282c9))
+
+### 其他改进
+
+- 新增 `tooltip.xaeroregionsrev.more_regions` 中英文语言键。
+- 公共布局逻辑（气泡排序/碰撞过滤/描边颜色选择）放入 `common` 模块，以纯 Java 契约测试完整覆盖，不依赖游戏运行环境。
+- AGENTS.md 文件树更新，反映新增的渲染布局类职责。
+
 ## [1.0.1] - 2026-07-11
 
 这是一个紧急修复版本。1.0.0 的多子项目重构引入了打包缺陷：发布 jar 只包含各平台子项目自身的 class，漏掉了 `common` 公共模块的全部 class，导致加载时 `ClassNotFoundException: com.suian.xaeroregionsrev.service.RegionStore` 崩溃。本版本修正构建脚本，将 common 的 class 合并进发布 jar。
@@ -135,6 +158,7 @@
 
 <!-- 变更链接 -->
 
+[1.1.0]: https://github.com/ONEGAYI/Xaero-Map-Regions-rev/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/ONEGAYI/Xaero-Map-Regions-rev/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/ONEGAYI/Xaero-Map-Regions-rev/compare/v0.1.5...v1.0.0
 [0.1.5]: https://github.com/ONEGAYI/Xaero-Map-Regions-rev/compare/v0.1.4...v0.1.5
